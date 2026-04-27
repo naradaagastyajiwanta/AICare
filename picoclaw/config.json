@@ -1,0 +1,54 @@
+{
+  "model_list": [
+    {
+      "model_name": "kimi",
+      "model": "moonshot-v1-8k",
+      "api_base": "https://api.moonshot.cn/v1",
+      "api_key": "${KIMI_API_KEY}"
+    }
+  ],
+
+  "agents": {
+    "defaults": {
+      "model_name": "kimi",
+      "system": "Kamu adalah asisten AI untuk sistem AICare, program monitoring kepatuhan minum obat dari Posyandu. Kamu membantu mengingatkan pasien minum obat, mencatat respons mereka, dan memberi tahu wali jika pasien tidak merespons. Selalu gunakan Bahasa Indonesia yang ramah dan suportif. Lihat file SKILL.md untuk instruksi lengkap."
+    }
+  },
+
+  "channel_list": {
+    "whatsapp": {
+      "enabled": true,
+      "type": "whatsapp",
+      "use_native": true,
+      "session_store_path": "",
+      "allow_from": []
+    }
+  },
+
+  "tools": {
+    "mcp": {
+      "enabled": true,
+      "servers": {
+        "aicare": {
+          "enabled": true,
+          "url": "http://localhost:3001/sse"
+        }
+      }
+    }
+  },
+
+  "cron": {
+    "jobs": [
+      {
+        "name": "reminder-pagi",
+        "schedule": "0 8 * * *",
+        "prompt": "Sekarang saatnya mengirim pengingat minum obat harian. Gunakan tool get_patients_for_reminder untuk mendapatkan daftar pasien yang belum diingatkan hari ini. Untuk setiap pasien, kirim pesan WhatsApp pengingat minum obat ke nomor mereka, lalu catat dengan record_reminder_sent. Ikuti format pesan yang ada di SKILL.md."
+      },
+      {
+        "name": "notifikasi-wali",
+        "schedule": "0 10 * * *",
+        "prompt": "Periksa pasien yang belum merespons reminder minum obat. Gunakan tool get_non_responders, lalu kirim notifikasi WhatsApp ke nomor wali (guardian_phone) masing-masing pasien yang belum merespons dan memiliki wali terdaftar. Setelah mengirim, catat dengan record_guardian_notified."
+      }
+    ]
+  }
+}

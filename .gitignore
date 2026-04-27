@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.local
+.next/
+out/
+dist/
+
+picoclaw/session/
+picoclaw/*.db
+picoclaw/workspace/
+
+*.log
+npm-debug.log*
+
+.DS_Store
+*.swp
