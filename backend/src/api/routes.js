@@ -111,7 +111,7 @@ router.get('/compliance', async (req, res) => {
         rs.responded_at
       FROM patients p
       JOIN reminders r ON r.patient_id = p.id
-        AND r.scheduled_date >= CURRENT_DATE - ($1 || ' days')::interval
+        AND r.scheduled_date >= CURRENT_DATE - ($1::integer * INTERVAL '1 day')
         AND r.status = 'sent'
       LEFT JOIN responses rs ON rs.patient_id = p.id
         AND DATE(rs.responded_at) = r.scheduled_date

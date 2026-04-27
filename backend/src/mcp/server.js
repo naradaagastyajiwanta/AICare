@@ -58,7 +58,7 @@ export function setupMcpTools(server) {
     },
     async ({ phone }) => {
       const result = await db.query(
-        'SELECT id, name, phone, guardian_name, guardian_phone, medicine_name FROM patients WHERE phone = $1',
+        'SELECT id, name, phone, guardian_name, guardian_phone, medicine_name FROM patients WHERE phone = $1 AND is_active = true',
         [phone]
       )
       const text = result.rows.length > 0

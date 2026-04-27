@@ -7,8 +7,13 @@ const EMPTY = {
   medicine_name: '', reminder_time: '08:00', notes: '', is_active: true,
 }
 
+function normalizePatient(p) {
+  if (!p) return EMPTY
+  return { ...p, reminder_time: (p.reminder_time ?? '08:00').slice(0, 5) }
+}
+
 function Modal({ patient, onClose, onSave }) {
-  const [form, setForm] = useState(patient ?? EMPTY)
+  const [form, setForm] = useState(normalizePatient(patient))
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
 
