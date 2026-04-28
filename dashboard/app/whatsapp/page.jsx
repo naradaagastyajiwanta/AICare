@@ -1,34 +1,29 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Card from '../../components/ui/Card'
+import Badge from '../../components/ui/Badge'
+import {
+  MessageCircle,
+  RefreshCw,
+  QrCode,
+  CheckCircle2,
+  WifiOff,
+  Loader2,
+  Smartphone,
+} from 'lucide-react'
 
-const STATUS_LABEL = {
-  unknown:      { text: 'Memeriksa...',         color: 'gray'   },
-  starting:     { text: 'Menghubungkan...',      color: 'yellow' },
-  qr:           { text: 'Menunggu scan QR',      color: 'blue'   },
-  connected:    { text: 'Terhubung',             color: 'green'  },
-  disconnected: { text: 'Terputus',              color: 'red'    },
-  stopped:      { text: 'Tidak berjalan',        color: 'red'    },
-  error:        { text: 'Error',                 color: 'red'    },
-}
-
-const DOT_COLOR = {
-  gray:   'bg-gray-400',
-  yellow: 'bg-yellow-400 animate-pulse',
-  blue:   'bg-blue-400 animate-pulse',
-  green:  'bg-green-500 animate-pulse',
-  red:    'bg-red-500',
-}
-
-const BADGE_COLOR = {
-  gray:   'bg-gray-100 text-gray-600',
-  yellow: 'bg-yellow-100 text-yellow-700',
-  blue:   'bg-blue-100 text-blue-700',
-  green:  'bg-green-100 text-green-700',
-  red:    'bg-red-100 text-red-700',
+const STATUS_CONFIG = {
+  unknown:      { text: 'Memeriksa...',         color: 'gray',   icon: Loader2,      spin: true },
+  starting:     { text: 'Menghubungkan...',      color: 'yellow', icon: Loader2,      spin: true },
+  qr:           { text: 'Menunggu scan QR',      color: 'blue',   icon: QrCode,       spin: false },
+  connected:    { text: 'Terhubung',             color: 'green',  icon: CheckCircle2, spin: false },
+  disconnected: { text: 'Terputus',              color: 'red',    icon: WifiOff,      spin: false },
+  stopped:      { text: 'Tidak berjalan',        color: 'red',    icon: WifiOff,      spin: false },
+  error:        { text: 'Error',                 color: 'red',    icon: WifiOff,      spin: false },
 }
 
 export default function WhatsAppPage() {
-  const [state, setState] = useState({ status: 'unknown', qrDataUrl: null, managed: false })
+  const [state, setState] = useState({ status: 'unknown', qrDataUrl: null })
   const [restarting, setRestarting] = useState(false)
 
   useEffect(() => {
@@ -47,90 +42,108 @@ export default function WhatsAppPage() {
   }
 
   const { status, qrDataUrl } = state
-  const info = STATUS_LABEL[status] ?? STATUS_LABEL.unknown
-  const color = info.color
+  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.unknown
+  const StatusIcon = config.icon
 
   return (
-    <div className="p-8 max-w-lg">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">WhatsApp</h1>
-      <p className="text-sm text-gray-500 mb-8">Kelola koneksi WhatsApp AICare</p>
+    <div className="p-6 lg:p-8 max-w-xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-surface-900 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+            <MessageCircle className="w-5 h-5 text-primary-600" />
+          </div>
+          WhatsApp
+        </h1>
+        <p className="text-sm text-surface-500 mt-2">Kelola koneksi WhatsApp AICare untuk kirim dan terima pesan</p>
+      </div>
 
       {/* Status Card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-medium text-gray-600">Status Koneksi</span>
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${BADGE_COLOR[color]}`}>
-            <span className={`w-2 h-2 rounded-full ${DOT_COLOR[color]}`} />
-            {info.text}
-          </span>
+      <Card padding="lg" className="mb-5">
+        <div className="flex items-center justify-between mb-6">
+          <span className="text-sm font-medium text-surface-600">Status Koneksi</span>
+          <Badge
+            variant={config.color}
+            dot
+            pulse={config.spin || status === 'qr'}
+            className="capitalize"
+          >
+            {config.text}
+          </Badge>
         </div>
 
         {status === 'connected' && (
-          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-            <span className="text-2xl">✅</span>
-            <div>
-              <p className="text-sm font-medium text-green-800">WhatsApp Aktif</p>
-              <p className="text-xs text-green-600">AICare siap menerima dan membalas pesan 24/7</p>
+          <div className="flex items-center gap-4 p-4 bg-primary-50 rounded-xl border border-primary-100">
+            <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+              <Smartphone className="w-6 h-6 text-primary-600" />
             </div>
+            <div>
+              <p className="text-sm font-semibold text-primary-800">WhatsApp Aktif</p>
+              <p className="text-xs text-primary-600 mt-0.5">AICare siap menerima dan membalas pesan pasien 24/7</p>
+            </div>
+            <CheckCircle2 className="w-5 h-5 text-primary-500 ml-auto" />
           </div>
         )}
 
         {status === 'qr' && qrDataUrl && (
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-4">
-              Buka WhatsApp di HP → <strong>Perangkat Tertaut</strong> → <strong>Tautkan Perangkat</strong> → scan QR ini
+            <p className="text-sm text-surface-600 mb-4">
+              Buka WhatsApp di HP → <strong>Perangkat Tertaut</strong> → <strong>Tautkan Perangkat</strong>
             </p>
-            <div className="inline-block p-3 bg-white border-2 border-gray-200 rounded-xl">
+            <div className="inline-block p-4 bg-white border-2 border-dashed border-surface-300 rounded-2xl">
               <img src={qrDataUrl} alt="WhatsApp QR Code" className="w-56 h-56" />
             </div>
-            <p className="text-xs text-gray-400 mt-3">QR berlaku beberapa menit. Klik Hubungkan Ulang jika kadaluarsa.</p>
+            <p className="text-xs text-surface-400 mt-3">QR berlaku beberapa menit. Klik tombol di bawah jika kadaluarsa.</p>
           </div>
         )}
 
         {status === 'qr' && !qrDataUrl && (
-          <div className="text-center py-4 text-gray-500 text-sm">
-            Menunggu QR code dari picoclaw...
+          <div className="flex flex-col items-center py-8 text-surface-400">
+            <Loader2 className="w-8 h-8 animate-spin mb-2" />
+            <p className="text-sm">Menunggu QR code dari server...</p>
           </div>
         )}
 
         {(status === 'starting' || status === 'unknown') && (
-          <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-            <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-yellow-700">Menghubungkan ke WhatsApp...</p>
+          <div className="flex items-center gap-4 p-4 bg-warning-50 rounded-xl border border-warning-100">
+            <Loader2 className="w-5 h-5 text-warning-600 animate-spin" />
+            <div>
+              <p className="text-sm font-medium text-warning-800">Menghubungkan ke WhatsApp...</p>
+              <p className="text-xs text-warning-600">Ini bisa memakan waktu 10-30 detik</p>
+            </div>
           </div>
         )}
 
         {(status === 'disconnected' || status === 'stopped' || status === 'error') && (
-          <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-            <span className="text-2xl">⚠️</span>
+          <div className="flex items-center gap-4 p-4 bg-danger-50 rounded-xl border border-danger-100">
+            <WifiOff className="w-5 h-5 text-danger-600" />
             <div>
-              <p className="text-sm font-medium text-red-800">WhatsApp Tidak Terhubung</p>
-              <p className="text-xs text-red-600">Klik tombol di bawah untuk menghubungkan ulang</p>
+              <p className="text-sm font-semibold text-danger-800">WhatsApp Tidak Terhubung</p>
+              <p className="text-xs text-danger-600">Klik tombol di bawah untuk menghubungkan ulang</p>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Actions */}
       <button
         onClick={handleRestart}
         disabled={restarting || status === 'starting'}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition-colors"
+        className="w-full btn-primary py-3"
       >
         {restarting ? (
           <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
             Menghubungkan ulang...
           </>
         ) : (
           <>
-            <span>🔄</span>
+            <RefreshCw className="w-4 h-4" />
             Hubungkan Ulang / Tampilkan QR Baru
           </>
         )}
       </button>
 
-      <p className="text-xs text-gray-400 text-center mt-4">
+      <p className="text-xs text-surface-400 text-center mt-4">
         Tombol ini akan merestart koneksi dan menampilkan QR baru untuk di-scan
       </p>
     </div>

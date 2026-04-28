@@ -1,14 +1,17 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
+import Badge from '../../components/ui/Badge'
+import Avatar from '../../components/ui/Avatar'
+import { SkeletonTable } from '../../components/ui/Skeleton'
+import { Calendar, ChevronDown, CheckCircle2, XCircle, HelpCircle, Minus } from 'lucide-react'
 
-const ANSWER_STYLE = {
-  YES:     'bg-green-100 text-green-700',
-  NO:      'bg-red-100   text-red-600',
-  UNCLEAR: 'bg-yellow-100 text-yellow-700',
-  null:    'bg-gray-100  text-gray-400',
+const ANSWER_CONFIG = {
+  YES:     { label: 'Sudah', variant: 'success', icon: CheckCircle2 },
+  NO:      { label: 'Belum', variant: 'danger',  icon: XCircle },
+  UNCLEAR: { label: 'Tidak Jelas', variant: 'warning', icon: HelpCircle },
+  null:    { label: '–',       variant: 'outline', icon: Minus },
 }
-const ANSWER_LABEL = { YES: 'Sudah', NO: 'Belum', UNCLEAR: 'Tidak Jelas', null: '–' }
 
 function groupByPatient(rows) {
   const map = new Map()
@@ -17,9 +20,13 @@ function groupByPatient(rows) {
   for (const row of rows) {
     const date = row.scheduled_date?.slice(0, 10)
     dates.add(date)
-
     if (!map.has(row.patient_id)) {
-      map.set(row.patient_id, { id: row.patient_id, name: row.patient_name, medicine: row.medicine_name, days: {} })
+      map.set(row.patient_id, {
+        id: row.patient_id,
+        name: row.patient_name,
+        medicine: row.medicine_name,
+        days: {},
+      })
     }
     map.get(row.patient_id).days[date] = row.answer
   }
@@ -29,8 +36,8 @@ function groupByPatient(rows) {
 }
 
 export default function CompliancePage() {
-  const [data,    setData]    = useState([])
-  const [days,    setDays]    = useState(14)
+  const [data, setData] = useState([])
+  const [days, setDays] = useState(14)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -43,81 +50,128 @@ export default function CompliancePage() {
   const { patients, dates } = groupByPatient(data)
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Kepatuhan Minum Obat</h1>
-        <select
-          value={days}
-          onChange={e => setDays(Number(e.target.value))}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-        >
-          <option value={7}>7 hari terakhir</option>
-          <option value={14}>14 hari terakhir</option>
-          <option value={30}>30 hari terakhir</option>
-        </select>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-surface-900">Kepatuhan Minum Obat</h1>
+          <p className="text-sm text-surface-500 mt-1">Tracking konfirmasi minum obat per pasien</p>
+        </div>
+        <div className="relative">
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+          <select
+            value={days}
+            onChange={e => setDays(Number(e.target.value))}
+            className="input pl-9 pr-8 appearance-none cursor-pointer w-44"
+          >
+            <option value={7}>7 hari terakhir</option>
+            <option value={14}>14 hari terakhir</option>
+            <option value={30}>30 hari terakhir</option>
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 pointer-events-none" />
+        </div>
       </div>
 
       {loading ? (
-        <p className="text-gray-500">Memuat...</p>
+        <SkeletonTable rows={5} cols={6} />
       ) : patients.length === 0 ? (
-        <p className="text-gray-400">Belum ada data reminder terkirim</p>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-          <table className="text-sm min-w-full">
-            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium sticky left-0 bg-gray-50 z-10">Pasien</th>
-                {dates.map(d => (
-                  <th key={d} className="px-3 py-3 text-center font-medium whitespace-nowrap">
-                    {d?.slice(5)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {patients.map(p => {
-                const total = dates.length
-                const yes   = dates.filter(d => p.days[d] === 'YES').length
-                const pct   = total > 0 ? Math.round((yes / total) * 100) : null
-
-                return (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 sticky left-0 bg-white hover:bg-gray-50 z-10">
-                      <p className="font-medium text-gray-800">{p.name}</p>
-                      <p className="text-xs text-gray-400">{p.medicine}</p>
-                    </td>
-                    {dates.map(d => {
-                      const ans = p.days[d] ?? null
-                      return (
-                        <td key={d} className="px-3 py-3 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ANSWER_STYLE[ans]}`}>
-                            {ANSWER_LABEL[ans]}
-                          </span>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="bg-white rounded-xl border border-surface-200 p-12 text-center">
+          <Calendar className="w-10 h-10 text-surface-300 mx-auto mb-3" />
+          <p className="text-sm text-surface-500 font-medium">Belum ada data reminder terkirim</p>
+          <p className="text-xs text-surface-400 mt-1">Reminder obat akan muncul di sini setelah dikirim</p>
         </div>
-      )}
+      ) : (
+        <>
+          <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="text-sm min-w-full">
+                <thead>
+                  <tr className="bg-surface-50 border-b border-surface-200">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider sticky left-0 bg-surface-50 z-10 min-w-[180px]">
+                      Pasien
+                    </th>
+                    {dates.map(d => (
+                      <th key={d} className="px-3 py-3 text-center text-xs font-semibold text-surface-500 uppercase tracking-wider whitespace-nowrap min-w-[72px]">
+                        {d?.slice(5)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-100">
+                  {patients.map(p => {
+                    const total = dates.length
+                    const yes = dates.filter(d => p.days[d] === 'YES').length
+                    const pct = total > 0 ? Math.round((yes / total) * 100) : null
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-green-500 inline-block"/> Sudah minum
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-red-400 inline-block"/> Belum minum
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-yellow-400 inline-block"/> Tidak jelas
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-gray-300 inline-block"/> Tidak merespons
-        </span>
-      </div>
+                    return (
+                      <tr key={p.id} className="hover:bg-surface-50/60 transition-colors">
+                        <td className="px-4 py-3 sticky left-0 bg-white hover:bg-surface-50/60 z-10 min-w-[180px]">
+                          <div className="flex items-center gap-3">
+                            <Avatar name={p.name} size="sm" />
+                            <div>
+                              <p className="font-semibold text-surface-800">{p.name}</p>
+                              <p className="text-xs text-surface-400">{p.medicine}</p>
+                              {pct != null && (
+                                <Badge variant={pct >= 80 ? 'success' : pct >= 50 ? 'warning' : 'danger'} className="mt-1">
+                                  {pct}%
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        {dates.map(d => {
+                          const ans = p.days[d] ?? null
+                          const config = ANSWER_CONFIG[ans]
+                          const Icon = config.icon
+                          return (
+                            <td key={d} className="px-3 py-3 text-center">
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                                ans === 'YES' ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200' :
+                                ans === 'NO' ? 'bg-danger-50 text-danger-700 ring-1 ring-danger-200' :
+                                ans === 'UNCLEAR' ? 'bg-warning-50 text-warning-700 ring-1 ring-warning-200' :
+                                'bg-surface-100 text-surface-400'
+                              }`}>
+                                <Icon className="w-3 h-3" />
+                                {config.label}
+                              </span>
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-surface-500">
+            <span className="font-medium text-surface-600">Keterangan:</span>
+            {Object.entries(ANSWER_CONFIG).map(([key, conf]) => {
+              if (key === 'null') return null
+              const Icon = conf.icon
+              return (
+                <span key={key} className="flex items-center gap-1.5">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${
+                    key === 'YES' ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200' :
+                    key === 'NO' ? 'bg-danger-50 text-danger-700 ring-1 ring-danger-200' :
+                    'bg-warning-50 text-warning-700 ring-1 ring-warning-200'
+                  }`}>
+                    <Icon className="w-3 h-3" />
+                    {conf.label}
+                  </span>
+                </span>
+              )
+            })}
+            <span className="flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-surface-100 text-surface-400">
+                <Minus className="w-3 h-3" /> Tidak merespons
+              </span>
+            </span>
+          </div>
+        </>
+      )}
     </div>
   )
 }

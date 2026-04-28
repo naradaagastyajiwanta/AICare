@@ -6,6 +6,9 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { api } from '../../lib/api'
+import Card from '../../components/ui/Card'
+import CircularProgress from '../../components/ui/CircularProgress'
+import { BarChart3, Pill, MessageSquare, TrendingUp, AlertTriangle } from 'lucide-react'
 
 export default function AnalyticsPage() {
   const [patients, setPatients] = useState([])
@@ -18,7 +21,19 @@ export default function AnalyticsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="p-8 text-gray-500">Memuat data...</div>
+  if (loading) return (
+    <div className="p-6 lg:p-8">
+      <div className="animate-pulse space-y-6">
+        <div className="h-8 w-48 bg-surface-200 rounded" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-28 bg-surface-200 rounded-xl" />
+          ))}
+        </div>
+        <div className="h-72 bg-surface-200 rounded-xl" />
+      </div>
+    </div>
+  )
 
   // Daily compliance trend (last 30 days)
   const dailyMap = new Map()
@@ -53,72 +68,103 @@ export default function AnalyticsPage() {
   const totalSent = compliance.length
   const overallRate = totalSent > 0 ? Math.round((totalYes / totalSent) * 100) : 0
 
+  const stats = [
+    { label: 'Total Reminder', value: totalSent, color: 'blue', icon: MessageSquare },
+    { label: 'Respons Masuk', value: totalResp, color: 'purple', icon: MessageSquare },
+    { label: 'Sudah Minum', value: totalYes, color: 'green', icon: Pill },
+    { label: 'Kepatuhan Overall', value: `${overallRate}%`, color: overallRate >= 80 ? 'green' : 'yellow', icon: TrendingUp },
+  ]
+
   return (
-    <div className="p-8 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Analitik (30 Hari Terakhir)</h1>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      <div className="mb-2">
+        <h1 className="text-2xl font-bold text-surface-900 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+            <BarChart3 className="w-5 h-5 text-primary-600" />
+          </div>
+          Analitik
+        </h1>
+        <p className="text-sm text-surface-500 mt-2">30 hari terakhir</p>
+      </div>
 
       {/* Summary numbers */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Reminder',   value: totalSent,  color: 'text-blue-600' },
-          { label: 'Respons Masuk',    value: totalResp,  color: 'text-gray-700' },
-          { label: 'Sudah Minum',      value: totalYes,   color: 'text-green-600' },
-          { label: 'Kepatuhan Overall',value: `${overallRate}%`, color: overallRate >= 80 ? 'text-green-600' : 'text-yellow-600' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
-          </div>
-        ))}
+        {stats.map(({ label, value, color, icon: Icon }) => {
+          const colorMap = {
+            blue:   '#2563eb',
+            purple: '#9333ea',
+            green:  '#16a34a',
+            yellow: '#d97706',
+          }
+          const c = colorMap[color] ?? colorMap.blue
+          return (
+            <Card key={label} padding="lg" hover>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${c}15` }}>
+                  <Icon className="w-4 h-4" style={{ color: c }} />
+                </div>
+                <span className="text-xs font-medium text-surface-500 uppercase tracking-wide">{label}</span>
+              </div>
+              <p className="text-2xl font-bold text-surface-900 mt-1">{value}</p>
+            </Card>
+          )
+        })}
       </div>
 
       {/* Daily trend */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-700 mb-4">Tren Kepatuhan Harian (%)</h2>
+      <Card padding="lg">
+        <div className="mb-5">
+          <h2 className="text-sm font-semibold text-surface-800">Tren Kepatuhan Harian</h2>
+          <p className="text-xs text-surface-400 mt-0.5">Persentase pasien yang mengonfirmasi minum obat</p>
+        </div>
         {dailyData.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">Belum ada data</p>
+          <div className="flex flex-col items-center justify-center py-12 text-surface-400">
+            <AlertTriangle className="w-8 h-8 mb-2 opacity-40" />
+            <p className="text-sm">Belum ada data</p>
+          </div>
         ) : (
-          <ResponsiveContainer width="100%" height={240}>
+          <ResponsiveContainer width="100%" height={280}>
             <LineChart data={dailyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
-              <Tooltip formatter={(v) => `${v}%`} />
-              <Line
-                type="monotone"
-                dataKey="Kepatuhan (%)"
-                stroke="#22c55e"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
+              <CartesianGrid strokeDasharray="3 3" stroke="#e8e8e0" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#73736b' }} axisLine={false} tickLine={false} dy={8} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: '#73736b' }} axisLine={false} tickLine={false} unit="%" />
+              <Tooltip
+                contentStyle={{ borderRadius: '10px', border: '1px solid #e8e8e0', boxShadow: '0 4px 12px rgba(20,20,18,0.08)', fontSize: '13px' }}
+                formatter={(v) => [`${v}%`, 'Kepatuhan']}
               />
+              <Line type="monotone" dataKey="Kepatuhan (%)" stroke="#16a34a" strokeWidth={2.5}
+                dot={{ r: 3, fill: '#16a34a', strokeWidth: 0 }} activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }} />
             </LineChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Card>
 
       {/* Per-patient bar chart */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-700 mb-4">Kepatuhan per Pasien (%)</h2>
+      <Card padding="lg">
+        <div className="mb-5">
+          <h2 className="text-sm font-semibold text-surface-800">Kepatuhan per Pasien</h2>
+          <p className="text-xs text-surface-400 mt-0.5">Diurutkan dari yang tertinggi</p>
+        </div>
         {perPatient.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">Belum ada data</p>
+          <div className="flex flex-col items-center justify-center py-12 text-surface-400">
+            <AlertTriangle className="w-8 h-8 mb-2 opacity-40" />
+            <p className="text-sm">Belum ada data</p>
+          </div>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(200, perPatient.length * 36)}>
-            <BarChart data={perPatient} layout="vertical" barCategoryGap="30%">
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
-              <Tooltip formatter={(v) => `${v}%`} />
-              <Bar
-                dataKey="rate"
-                name="Kepatuhan"
-                fill="#22c55e"
-                radius={[0, 4, 4, 0]}
+          <ResponsiveContainer width="100%" height={Math.max(240, perPatient.length * 36)}>
+            <BarChart data={perPatient} layout="vertical" barCategoryGap="25%">
+              <CartesianGrid strokeDasharray="3 3" stroke="#e8e8e0" horizontal={false} />
+              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12, fill: '#73736b' }} axisLine={false} tickLine={false} unit="%" />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#73736b' }} axisLine={false} tickLine={false} width={90} />
+              <Tooltip
+                contentStyle={{ borderRadius: '10px', border: '1px solid #e8e8e0', boxShadow: '0 4px 12px rgba(20,20,18,0.08)', fontSize: '13px' }}
+                formatter={(v) => [`${v}%`, 'Kepatuhan']}
               />
+              <Bar dataKey="rate" name="Kepatuhan" fill="#16a34a" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

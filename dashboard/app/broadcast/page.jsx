@@ -1,6 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
+import Card from '../../components/ui/Card'
+import Badge from '../../components/ui/Badge'
+import { useToast } from '../../components/ui/Toast'
+import { Megaphone, Send, CheckCircle2, AlertTriangle, Loader2, Clock } from 'lucide-react'
 
 export default function BroadcastPage() {
   const [form,        setForm]        = useState({ title: '', message: '' })
@@ -10,6 +14,7 @@ export default function BroadcastPage() {
   const [history,     setHistory]     = useState([])
   const [loadingHist, setLoadingHist] = useState(true)
   const [education,   setEducation]   = useState([])
+  const { addToast } = useToast()
 
   function loadHistory() {
     api.getBroadcasts()
@@ -23,12 +28,8 @@ export default function BroadcastPage() {
   }, [])
 
   function useTemplate(material) {
-    setForm(f => ({
-      ...f,
-      title: material.title,
-      message: material.content,
-    }))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setForm(f => ({ ...f, title: material.title, message: material.content }))
+    addToast('Template diterapkan', 'info')
   }
 
   async function handleSend(e) {
@@ -42,117 +43,130 @@ export default function BroadcastPage() {
       setResult(res)
       setForm({ title: '', message: '' })
       loadHistory()
+      addToast(`Broadcast terkirim ke ${res.sent} pasien`, 'success')
     } catch (err) {
       setError(err.message)
+      addToast(err.message, 'error')
     } finally {
       setSending(false)
     }
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Broadcast Pesan</h1>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-surface-900 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+            <Megaphone className="w-5 h-5 text-primary-600" />
+          </div>
+          Broadcast Pesan
+        </h1>
+        <p className="text-sm text-surface-500 mt-2">Kirim pesan ke semua pasien aktif via WhatsApp</p>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Compose Form */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-700 mb-4">Kirim Pesan ke Semua Pasien</h2>
+        <Card padding="lg">
+          <h2 className="text-sm font-semibold text-surface-800 mb-5">Tulis Pesan</h2>
 
           <form onSubmit={handleSend} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Judul (opsional)</label>
-              <input
-                value={form.title}
+              <label className="block text-xs font-medium text-surface-600 mb-1.5">Judul (opsional)</label>
+              <input value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="contoh: Jadwal Posyandu Bulan Ini"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-              />
+                placeholder="contoh: Jadwal Posyandu Bulan Ini" className="input" />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Pesan *</label>
-              <textarea
-                value={form.message}
+              <label className="block text-xs font-medium text-surface-600 mb-1.5">Pesan *</label>
+              <textarea value={form.message}
                 onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                rows={7}
-                required
-                placeholder="Tulis pesan broadcast di sini..."
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
-              />
-              <p className="text-xs text-gray-400 mt-1">{form.message.length} karakter</p>
+                rows={7} required placeholder="Tulis pesan broadcast di sini..."
+                className="input resize-none" />
+              <p className="text-xs text-surface-400 mt-1.5 text-right">{form.message.length} karakter</p>
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+              <div className="flex items-center gap-2 text-sm text-danger-700 bg-danger-50 rounded-lg px-3 py-2.5 border border-danger-200">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                {error}
+              </div>
             )}
 
             {result && (
-              <div className="bg-green-50 rounded-lg px-4 py-3 border border-green-100">
-                <p className="text-sm font-semibold text-green-700">
-                  Broadcast terkirim! ✅
-                </p>
-                <p className="text-xs text-green-600 mt-1">
+              <div className="bg-primary-50 rounded-lg px-4 py-3 border border-primary-200">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary-600" />
+                  <p className="text-sm font-semibold text-primary-800">Broadcast terkirim!</p>
+                </div>
+                <p className="text-xs text-primary-600 mt-1">
                   {result.sent} pasien berhasil dikirim
                   {result.failed > 0 && `, ${result.failed} gagal`}
                 </p>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={sending || !form.message.trim()}
-              className="w-full py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-60 transition-colors"
-            >
-              {sending ? 'Mengirim...' : '📢 Kirim ke Semua Pasien'}
+            <button type="submit" disabled={sending || !form.message.trim()} className="w-full btn-primary py-3">
+              {sending ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Mengirim...</>
+              ) : (
+                <><Send className="w-4 h-4" /> Kirim ke Semua Pasien</>
+              )}
             </button>
           </form>
 
           {/* Education templates */}
           {education.filter(m => m.is_active).length > 0 && (
-            <div className="mt-6 pt-5 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-500 mb-3">Gunakan template materi edukasi:</p>
+            <div className="mt-6 pt-5 border-t border-surface-100">
+              <p className="text-xs font-medium text-surface-500 mb-3">Gunakan template materi edukasi:</p>
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {education.filter(m => m.is_active).map(m => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => useTemplate(m)}
-                    className="w-full text-left px-3 py-2.5 rounded-lg border border-gray-200 hover:border-green-400 hover:bg-green-50 transition-colors"
-                  >
-                    <p className="text-xs font-semibold text-gray-700 truncate">{m.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{m.content}</p>
+                  <button key={m.id} type="button" onClick={() => useTemplate(m)}
+                    className="w-full text-left px-3 py-2.5 rounded-lg border border-surface-200 hover:border-primary-300 hover:bg-primary-50/50 transition-colors">
+                    <p className="text-xs font-semibold text-surface-700 truncate">{m.title}</p>
+                    <p className="text-xs text-surface-400 mt-0.5 line-clamp-1">{m.content}</p>
                   </button>
                 ))}
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Broadcast History */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-700 mb-4">Riwayat Broadcast</h2>
+        <Card padding="lg">
+          <h2 className="text-sm font-semibold text-surface-800 mb-5">Riwayat Broadcast</h2>
 
           {loadingHist ? (
-            <p className="text-gray-400 text-sm">Memuat...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-20 bg-surface-100 rounded-lg animate-pulse" />
+              ))}
+            </div>
           ) : history.length === 0 ? (
-            <p className="text-gray-400 text-sm">Belum ada broadcast</p>
+            <div className="text-center py-12 text-surface-400">
+              <Megaphone className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">Belum ada broadcast</p>
+            </div>
           ) : (
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
               {history.map(b => (
-                <div key={b.id} className="border border-gray-100 rounded-lg p-3">
+                <div key={b.id} className="border border-surface-100 rounded-lg p-3.5 hover:bg-surface-50/50 transition-colors">
                   {b.title && (
-                    <p className="text-xs font-semibold text-gray-700 mb-1">{b.title}</p>
+                    <p className="text-xs font-semibold text-surface-700 mb-1">{b.title}</p>
                   )}
-                  <p className="text-sm text-gray-600 whitespace-pre-line line-clamp-3">{b.message}</p>
-                  <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
-                    <span>{b.recipient_count} penerima</span>
-                    <span>{new Date(b.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  <p className="text-sm text-surface-600 whitespace-pre-line line-clamp-3">{b.message}</p>
+                  <div className="flex items-center justify-between mt-2.5 text-xs text-surface-400">
+                    <Badge variant="outline">{b.recipient_count} penerima</Badge>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(b.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   )

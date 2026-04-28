@@ -1,17 +1,34 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
+import Badge from '../../components/ui/Badge'
+import Avatar from '../../components/ui/Avatar'
+import Card from '../../components/ui/Card'
+import CircularProgress from '../../components/ui/CircularProgress'
+import { SkeletonCard } from '../../components/ui/Skeleton'
+import { Calendar, ChevronDown, Pill, Activity, Utensils, Star, ArrowRight } from 'lucide-react'
 
-const SCORE_STYLE = {
-  green: 'bg-green-100 text-green-700',
-  yellow: 'bg-yellow-100 text-yellow-700',
-  red: 'bg-red-100 text-red-600',
+const SCORE_COLORS = {
+  green:  { color: '#16a34a', bg: '#f0fdf4' },
+  yellow: { color: '#d97706', bg: '#fffbeb' },
+  red:    { color: '#dc3528', bg: '#fef2f0' },
 }
 
 function scoreClass(total) {
-  if (total >= 200) return SCORE_STYLE.green
-  if (total >= 100) return SCORE_STYLE.yellow
-  return SCORE_STYLE.red
+  if (total >= 200) return 'green'
+  if (total >= 100) return 'yellow'
+  return 'red'
+}
+
+function ScoreGauge({ value, max = 100, label, color, size = 44 }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <CircularProgress value={Math.round((value / max) * 100)} size={size} strokeWidth={4} color={color}>
+        <span className="text-[10px] font-bold" style={{ color }}>{value}</span>
+      </CircularProgress>
+      <span className="text-[10px] text-surface-500">{label}</span>
+    </div>
+  )
 }
 
 export default function SelfReportsPage() {
@@ -36,80 +53,121 @@ export default function SelfReportsPage() {
   const dates = Object.keys(byDate).sort().reverse()
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Laporan Harian Pasien</h1>
-        <select
-          value={days}
-          onChange={e => setDays(Number(e.target.value))}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-        >
-          <option value={7}>7 hari terakhir</option>
-          <option value={14}>14 hari terakhir</option>
-          <option value={30}>30 hari terakhir</option>
-        </select>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-surface-900">Laporan Harian Pasien</h1>
+          <p className="text-sm text-surface-500 mt-1">Skor kesehatan harian: obat, aktivitas, dan pola makan</p>
+        </div>
+        <div className="relative">
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+          <select
+            value={days}
+            onChange={e => setDays(Number(e.target.value))}
+            className="input pl-9 pr-8 appearance-none cursor-pointer w-44"
+          >
+            <option value={7}>7 hari terakhir</option>
+            <option value={14}>14 hari terakhir</option>
+            <option value={30}>30 hari terakhir</option>
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 pointer-events-none" />
+        </div>
       </div>
 
       {loading ? (
-        <p className="text-gray-500">Memuat...</p>
+        <div className="space-y-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       ) : dates.length === 0 ? (
-        <p className="text-gray-400">Belum ada data laporan</p>
+        <div className="bg-white rounded-xl border border-surface-200 p-12 text-center">
+          <Star className="w-10 h-10 text-surface-300 mx-auto mb-3" />
+          <p className="text-sm text-surface-500 font-medium">Belum ada data laporan</p>
+          <p className="text-xs text-surface-400 mt-1">Laporan akan muncul setelah pasien mulai merespons</p>
+        </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {dates.map(date => (
-            <div key={date} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <h2 className="text-sm font-semibold text-gray-700">
+            <Card key={date} padding="none" className="overflow-hidden">
+              <div className="px-5 py-3.5 bg-surface-50 border-b border-surface-100 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-surface-800">
                   {new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </h2>
+                <Badge variant="outline">{byDate[date].length} pasien</Badge>
               </div>
-              <table className="w-full text-sm">
-                <thead className="text-gray-500 text-xs uppercase">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium">Pasien</th>
-                    <th className="px-3 py-2 text-center font-medium">Obat</th>
-                    <th className="px-3 py-2 text-center font-medium">Aktivitas</th>
-                    <th className="px-3 py-2 text-center font-medium">Pola Makan</th>
-                    <th className="px-3 py-2 text-center font-medium">Total</th>
-                    <th className="px-3 py-2 text-center font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {byDate[date].map(row => (
-                    <tr key={row.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 font-medium text-gray-800">{row.patient_name}</td>
-                      <td className="px-3 py-2 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.medication_score >= 100 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                          {row.medication_score >= 100 ? '✅' : '–'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.activity_score >= 100 ? 'bg-green-100 text-green-700' : row.activity_score >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-400'}`}>
-                          {row.activity_score >= 100 ? '💯' : row.activity_score >= 50 ? '50%' : '–'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.diet_score >= 100 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                          {row.diet_score >= 100 ? '✅' : '–'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${scoreClass(row.total_score)}`}>
-                          {row.total_score}/300
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-center">
+
+              <div className="divide-y divide-surface-100">
+                {byDate[date].map(row => {
+                  const theme = SCORE_COLORS[scoreClass(row.total_score)]
+                  return (
+                    <div key={row.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-surface-50/40 transition-colors">
+                      {/* Patient Info */}
+                      <div className="flex items-center gap-3 min-w-[180px]">
+                        <Avatar name={row.patient_name} size="md" />
+                        <div>
+                          <p className="text-sm font-semibold text-surface-800">{row.patient_name}</p>
+                          <p className="text-xs text-surface-400">Total skor</p>
+                        </div>
+                      </div>
+
+                      {/* Score Gauges */}
+                      <div className="flex items-center gap-5 flex-1">
+                        <ScoreGauge
+                          value={row.medication_score}
+                          max={100}
+                          label="Obat"
+                          color={row.medication_score >= 100 ? '#16a34a' : '#a3a39a'}
+                          size={40}
+                        />
+                        <ScoreGauge
+                          value={row.activity_score}
+                          max={100}
+                          label="Aktivitas"
+                          color={row.activity_score >= 100 ? '#f59e0b' : row.activity_score >= 50 ? '#d97706' : '#a3a39a'}
+                          size={40}
+                        />
+                        <ScoreGauge
+                          value={row.diet_score}
+                          max={100}
+                          label="Makan"
+                          color={row.diet_score >= 100 ? '#0ea5e9' : '#a3a39a'}
+                          size={40}
+                        />
+                      </div>
+
+                      {/* Total Score & Status */}
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="flex items-center gap-2 justify-end">
+                            <span className="text-lg font-bold" style={{ color: theme.color }}>
+                              {row.total_score}
+                            </span>
+                            <span className="text-xs text-surface-400">/ 300</span>
+                          </div>
+                          <div className="h-1.5 w-24 bg-surface-100 rounded-full overflow-hidden mt-1">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${(row.total_score / 300) * 100}%`, background: theme.color }}
+                            />
+                          </div>
+                        </div>
+
                         {row.all_positive ? (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">🌟 Luar Biasa</span>
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 text-primary-700 text-xs font-semibold ring-1 ring-primary-200">
+                            <Star className="w-3.5 h-3.5 fill-primary-500 text-primary-500" />
+                            Luar Biasa
+                          </div>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400">–</span>
+                          <div className="w-20" />
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
           ))}
         </div>
       )}
