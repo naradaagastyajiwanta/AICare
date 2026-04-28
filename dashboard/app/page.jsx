@@ -25,6 +25,11 @@ export default function OverviewPage() {
   const rate   = sent > 0 ? Math.round((took / sent) * 100) : 0
   const pending = sent - responded
 
+  const actReports = Number(stats.today_reports?.activity_reports ?? 0)
+  const dietReports = Number(stats.today_reports?.diet_reports ?? 0)
+  const avgScore = Number(stats.today_scores?.avg_score ?? 0)
+  const catToday = stats.category_today ?? {}
+
   const chartData = (stats.weekly_trend ?? []).map(row => ({
     date:    row.date?.slice(5),   // MM-DD
     Minum:   Number(row.yes_count),
@@ -48,25 +53,52 @@ export default function OverviewPage() {
         <StatsCard
           title="Reminder Terkirim"
           value={sent}
-          subtitle="hari ini"
+          subtitle={`Obat: ${catToday.medication ?? 0} | Aktivitas: ${catToday.activity ?? 0} | Makan: ${catToday.diet ?? 0}`}
           color="green"
         />
         <StatsCard
-          title="Sudah Minum"
+          title="Sudah Minum Obat"
           value={took}
           subtitle={`${rate}% kepatuhan`}
           color={rate >= 80 ? 'green' : rate >= 50 ? 'yellow' : 'red'}
         />
         <StatsCard
-          title="Belum Merespons"
+          title="Belum Merespons Obat"
           value={pending}
           subtitle="perlu perhatian"
           color={pending > 0 ? 'yellow' : 'green'}
         />
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatsCard
+          title="Laporan Aktivitas"
+          value={actReports}
+          subtitle="hari ini"
+          color="orange"
+        />
+        <StatsCard
+          title="Laporan Pola Makan"
+          value={dietReports}
+          subtitle="hari ini"
+          color="emerald"
+        />
+        <StatsCard
+          title="Skor Rata-rata"
+          value={`${avgScore}/300`}
+          subtitle="semua pasien"
+          color={avgScore >= 200 ? 'green' : avgScore >= 100 ? 'yellow' : 'red'}
+        />
+        <StatsCard
+          title="Laporan Luar Biasa"
+          value="–"
+          subtitle="semua target tercapai"
+          color="purple"
+        />
+      </div>
+
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-700 mb-4">Tren Kepatuhan 7 Hari Terakhir</h2>
+        <h2 className="text-base font-semibold text-gray-700 mb-4">Tren Kepatuhan Minum Obat 7 Hari Terakhir</h2>
         {chartData.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-8">Belum ada data respons</p>
         ) : (

@@ -1,19 +1,33 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import fs from 'fs'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const UPLOADS_DIR = path.resolve(__dirname, '../../uploads')
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true })
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { setupMcpTools } from './mcp/server.js'
 import apiRoutes from './api/routes.js'
+import { waService } from './whatsapp/service.js'
+import { startCronJobs } from './cron/reminder.js'
+import { handleChatMessage } from './chat-handler.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
+// Serve uploaded images
+app.use('/uploads', express.static(UPLOADS_DIR))
+
 // REST API for dashboard
 app.use('/api', apiRoutes)
 
-// MCP Server (SSE transport — PicoClaw connects via HTTP)
+// MCP Server — SSE transport
 const mcpServer = new McpServer({ name: 'aicare', version: '1.0.0' })
 setupMcpTools(mcpServer)
 
@@ -33,6 +47,24 @@ app.post('/messages', async (req, res) => {
   await transport.handlePostMessage(req, res, req.body)
 })
 
+// MCP Streamable HTTP (modern transport)
+app.all('/mcp', async (req, res) => {
+  const accept = req.headers['accept'] ?? ''
+  if (!accept.includes('application/json') || !accept.includes('text/event-stream')) {
+    req.headers['accept'] = 'application/json, text/event-stream'
+  }
+  try {
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
+    const server = new McpServer({ name: 'aicare', version: '1.0.0' })
+    setupMcpTools(server)
+    await server.connect(transport)
+    await transport.handleRequest(req, res, req.body)
+  } catch (err) {
+    console.error('[mcp] /mcp handler error:', err.message)
+    if (!res.headersSent) res.status(500).json({ error: err.message })
+  }
+})
+
 app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 
 const PORT = process.env.PORT ?? 3001
@@ -40,4 +72,20 @@ app.listen(PORT, () => {
   console.log(`AICare backend  : http://localhost:${PORT}`)
   console.log(`MCP SSE endpoint: http://localhost:${PORT}/sse`)
   console.log(`REST API        : http://localhost:${PORT}/api`)
+
+  waService.connect()
+  startCronJobs(waService)
+
+  waService.on('message', async ({ phone, text, jid }) => {
+    console.log(`[WA] Message from ${phone}: ${text}`)
+    try {
+      const reply = await handleChatMessage(phone, text, waService)
+      if (reply) await waService.sendMessage(jid, reply)
+    } catch (err) {
+      console.error('[WA] Failed to handle message:', err.message)
+      try {
+        await waService.sendMessage(jid, 'Maaf, sistem sedang sibuk. Mohon coba lagi beberapa saat.')
+      } catch {}
+    }
+  })
 })

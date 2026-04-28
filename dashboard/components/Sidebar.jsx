@@ -3,11 +3,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const nav = [
-  { href: '/',            label: 'Overview',   icon: '📊' },
-  { href: '/patients',    label: 'Pasien',      icon: '👥' },
-  { href: '/compliance',  label: 'Kepatuhan',   icon: '✅' },
-  { href: '/broadcast',   label: 'Broadcast',   icon: '📢' },
-  { href: '/analytics',   label: 'Analitik',    icon: '📈' },
+  { href: '/',             label: 'Overview',       icon: '📊' },
+  { href: '/patients',     label: 'Pasien',         icon: '👥' },
+  { href: '/self-reports', label: 'Laporan Harian', icon: '📝' },
+  { href: '/compliance',   label: 'Kepatuhan',      icon: '✅' },
+  { href: '/education',    label: 'Edukasi',        icon: '📚' },
+  { href: '/broadcast',    label: 'Broadcast',      icon: '📢' },
+  { href: '/knowledge',    label: 'Knowledge Base', icon: '🧠' },
+  { href: '/analytics',    label: 'Analitik',       icon: '📈' },
+  { href: '/whatsapp',     label: 'WhatsApp',       icon: '💬' },
 ]
 
 export default function Sidebar() {

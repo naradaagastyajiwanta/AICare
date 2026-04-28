@@ -5,9 +5,16 @@ node_modules/
 out/
 dist/
 
+# WhatsApp session files (contain auth credentials — never commit)
+backend/wa-session/
+wa-session/
+
 picoclaw/session/
 picoclaw/*.db
 picoclaw/workspace/
+picoclaw/config.json
+picoclaw/*.exe
+backend/pg-data/
 
 *.log
 npm-debug.log*
