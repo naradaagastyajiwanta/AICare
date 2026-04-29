@@ -31,20 +31,23 @@ export default function RootLayout({ children }) {
     <html lang="id">
       <body className="min-h-screen">
         <ToastProvider>
-          {/* Desktop Sidebar */}
-          <div className="hidden lg:block">
-            <Sidebar />
+          <div className="lg:flex min-h-screen">
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:block">
+              <Sidebar />
+            </div>
+
+            {/* Right side: mobile header + main content */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <MobileHeader />
+              {/* pb-24 on mobile clears bottom nav */}
+              <main className="flex-1 min-w-0 pb-24 lg:pb-0">
+                {children}
+              </main>
+            </div>
           </div>
 
-          {/* Mobile Header */}
-          <MobileHeader />
-
-          {/* Main Content — pb-24 on mobile clears bottom nav */}
-          <main className="flex-1 overflow-auto min-w-0 pb-24 lg:pb-0">
-            {children}
-          </main>
-
-          {/* Mobile Bottom Navigation + More Sheet */}
+          {/* Mobile Bottom Navigation + More Sheet (fixed, outside flow) */}
           <BottomNavWrapper />
         </ToastProvider>
       </body>

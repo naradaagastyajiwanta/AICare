@@ -20,15 +20,29 @@ const STATUS_CONFIG = {
 export default function WhatsAppPage() {
   const [state, setState] = useState({ status: 'unknown', qrDataUrl: null })
   const [restarting, setRestarting] = useState(false)
+  const [startingTimeout, setStartingTimeout] = useState(false)
 
   useEffect(() => {
     const es = new EventSource('/api/wa/events')
     es.onmessage = (e) => {
       try { setState(JSON.parse(e.data)) } catch {}
     }
-    es.onerror = () => setState(s => ({ ...s, status: s.status === 'connected' ? 'disconnected' : s.status }))
+    es.onerror = () => setState(s => ({
+      ...s,
+      status: s.status === 'connected' ? 'disconnected' : 'error',
+    }))
     return () => es.close()
   }, [])
+
+  // If stuck in starting/unknown for >20s, surface the restart button
+  useEffect(() => {
+    if (state.status !== 'starting' && state.status !== 'unknown') {
+      setStartingTimeout(false)
+      return
+    }
+    const t = setTimeout(() => setStartingTimeout(true), 20_000)
+    return () => clearTimeout(t)
+  }, [state.status])
 
   const handleRestart = async () => {
     setRestarting(true)
@@ -100,10 +114,14 @@ export default function WhatsAppPage() {
 
         {(status === 'starting' || status === 'unknown') && (
           <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-warning-50 rounded-xl border border-warning-100">
-            <Loader2 className="w-5 h-5 text-warning-600 animate-spin" />
+            <Loader2 className="w-5 h-5 text-warning-600 animate-spin shrink-0" />
             <div>
               <p className="text-sm font-bold text-warning-800">Menghubungkan ke WhatsApp...</p>
-              <p className="text-xs text-warning-600 font-medium">Ini bisa memakan waktu 10-30 detik</p>
+              <p className="text-xs text-warning-600 font-medium">
+                {startingTimeout
+                  ? 'Butuh waktu lebih lama — klik tombol di bawah untuk coba lagi.'
+                  : 'Menunggu QR code dari server, ini bisa 10–30 detik.'}
+              </p>
             </div>
           </div>
         )}
@@ -121,7 +139,7 @@ export default function WhatsAppPage() {
 
       <button
         onClick={handleRestart}
-        disabled={restarting || status === 'starting'}
+        disabled={restarting}
         className="w-full btn-primary py-3"
       >
         {restarting ? (
