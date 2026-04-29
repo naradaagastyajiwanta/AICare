@@ -13,6 +13,7 @@ import {
   BarChart3,
   MessageCircle,
   HeartPulse,
+  BookOpenText,
 } from 'lucide-react'
 
 const nav = [
@@ -25,6 +26,7 @@ const nav = [
   { href: '/knowledge',    label: 'Knowledge Base', icon: Brain },
   { href: '/analytics',    label: 'Analitik',       icon: BarChart3 },
   { href: '/whatsapp',     label: 'WhatsApp',       icon: MessageCircle },
+  { href: '/guide',        label: 'Panduan',        icon: BookOpenText },
 ]
 
 export default function Sidebar() {

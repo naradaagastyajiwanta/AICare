@@ -9,6 +9,7 @@ import {
   Brain,
   BarChart3,
   MessageCircle,
+  BookOpenText,
   X,
 } from 'lucide-react'
 
@@ -18,6 +19,7 @@ const OVERFLOW_NAV = [
   { href: '/knowledge', label: 'Knowledge',    icon: Brain },
   { href: '/analytics', label: 'Analitik',     icon: BarChart3 },
   { href: '/whatsapp',  label: 'WhatsApp',     icon: MessageCircle },
+  { href: '/guide',     label: 'Panduan',      icon: BookOpenText },
 ]
 
 export default function MoreSheet({ open, onClose }) {

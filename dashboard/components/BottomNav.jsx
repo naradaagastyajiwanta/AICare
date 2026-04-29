@@ -8,6 +8,7 @@ import {
   CheckSquare,
   ClipboardList,
   Grid3X3,
+  BookOpenText,
 } from 'lucide-react'
 
 const PRIMARY_NAV = [
@@ -17,7 +18,7 @@ const PRIMARY_NAV = [
   { href: '/self-reports', label: 'Laporan',        icon: ClipboardList },
 ]
 
-const OVERFLOW_PATHS = ['/education', '/broadcast', '/knowledge', '/analytics', '/whatsapp']
+const OVERFLOW_PATHS = ['/education', '/broadcast', '/knowledge', '/analytics', '/whatsapp', '/guide']
 
 export default function BottomNav({ onMoreOpen }) {
   const pathname = usePathname()
