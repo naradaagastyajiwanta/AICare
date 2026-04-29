@@ -27,6 +27,23 @@ function parseMedicationAnswer(text) {
   return null
 }
 
+/**
+ * Returns true only when the message looks like a direct YES/NO answer,
+ * not a longer sentence that happens to contain a keyword mid-clause
+ * (e.g. "okei terima kasih sudah mengingatkan" is NOT a direct answer).
+ *
+ * Rules:
+ *   - ≤ 4 words → always a direct answer
+ *   - > 4 words → only if a YES/NO keyword appears within the first 2 words
+ */
+function isDirectAnswer(text) {
+  const words = text.toLowerCase().trim().split(/\s+/)
+  if (words.length <= 4) return true
+  const firstTwo = words.slice(0, 2).join(' ')
+  return YES_KEYWORDS.some(k => matchesKeyword(firstTwo, k)) ||
+         NO_KEYWORDS.some(k => matchesKeyword(firstTwo, k))
+}
+
 function replyForCategory(patient, answer, category) {
   const { name, medicine_name } = patient
 
@@ -88,9 +105,9 @@ export async function handleChatMessage(phone, text, waService) {
       return `Halo ${name}! 📋 Jadwal minum obat *${patient.medicine_name}* setiap hari pukul *${time}* WIB. Jangan sampai terlewat ya! 💊`
     }
 
-    // 3. Quick path: clear YES/NO keywords → check most recent reminder sent today for context
+    // 3. Quick path: short direct YES/NO reply → bypass AI for speed
     const answer = parseMedicationAnswer(text)
-    if (answer) {
+    if (answer && isDirectAnswer(text)) {
       // Determine category from most recently sent reminder today
       const recentReminder = await db.query(
         `SELECT id, category FROM reminders

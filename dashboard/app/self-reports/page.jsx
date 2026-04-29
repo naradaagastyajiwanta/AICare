@@ -53,11 +53,11 @@ export default function SelfReportsPage() {
   const dates = Object.keys(byDate).sort().reverse()
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Laporan Harian Pasien</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900">Laporan Harian Pasien</h1>
           <p className="text-sm text-surface-500 mt-1">Skor kesehatan harian: obat, aktivitas, dan pola makan</p>
         </div>
         <div className="relative">
@@ -91,7 +91,7 @@ export default function SelfReportsPage() {
         <div className="space-y-5">
           {dates.map(date => (
             <Card key={date} padding="none" className="overflow-hidden">
-              <div className="px-5 py-3.5 bg-surface-50 border-b border-surface-100 flex items-center justify-between">
+              <div className="px-4 sm:px-5 py-3.5 bg-surface-50 border-b border-surface-100 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-surface-800">
                   {new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </h2>
@@ -102,7 +102,7 @@ export default function SelfReportsPage() {
                 {byDate[date].map(row => {
                   const theme = SCORE_COLORS[scoreClass(row.total_score)]
                   return (
-                    <div key={row.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-surface-50/40 transition-colors">
+                    <div key={row.id} className="px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-surface-50/40 transition-colors">
                       {/* Patient Info */}
                       <div className="flex items-center gap-3 min-w-[180px]">
                         <Avatar name={row.patient_name} size="md" />

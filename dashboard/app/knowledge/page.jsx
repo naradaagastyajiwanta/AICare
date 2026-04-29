@@ -164,11 +164,11 @@ export default function KnowledgePage() {
   const totalActive = items.filter(i => i.is_active).length
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 flex items-center gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
               <Brain className="w-5 h-5 text-primary-600" />
             </div>
@@ -204,11 +204,11 @@ export default function KnowledgePage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
+      <div className="flex items-center gap-3 mb-4 overflow-x-auto pb-1">
         <div className="flex items-center gap-2 flex-wrap">
           {[['all', 'Semua'], ...Object.entries(CATEGORIES).map(([k, v]) => [k, v.label])].map(([key, label]) => (
             <button key={key} onClick={() => setFilter(key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap ${
                 filter === key
                   ? 'bg-surface-800 text-white border-surface-800 shadow-sm'
                   : 'bg-white text-surface-600 border-surface-200 hover:border-surface-300'
@@ -267,10 +267,11 @@ export default function KnowledgePage() {
             </div>
           )}
 
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-[700px] text-sm">
             <thead>
               <tr className="bg-surface-50 border-b border-surface-200">
-                <th className="px-4 py-3 w-10">
+                <th className="px-3 sm:px-4 py-3 w-10">
                   <input
                     type="checkbox"
                     checked={filtered.length > 0 && selected.size === filtered.length}
@@ -279,10 +280,10 @@ export default function KnowledgePage() {
                     className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 cursor-pointer"
                   />
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider">Judul & Konten</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-28">Kategori</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-20">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-24">Aksi</th>
+                <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider">Judul & Konten</th>
+                <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-28">Kategori</th>
+                <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-20">Status</th>
+                <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-24">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-100">
@@ -290,8 +291,8 @@ export default function KnowledgePage() {
                 const cat = CATEGORIES[item.category] || CATEGORIES.umum
                 const isSelected = selected.has(item.id)
                 return (
-                  <tr key={item.id} className={`transition-colors ${isSelected ? 'bg-primary-50/50' : 'hover:bg-surface-50/60'} ${!item.is_active ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-3">
+                  <tr key={item.id} className={`group transition-colors ${isSelected ? 'bg-primary-50/50' : 'hover:bg-surface-50/60'} ${!item.is_active ? 'opacity-50' : ''}`}>
+                    <td className="px-3 sm:px-4 py-3">
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -299,17 +300,17 @@ export default function KnowledgePage() {
                         className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 cursor-pointer"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-3">
                       <p className="font-semibold text-surface-800 mb-0.5">{item.title}</p>
                       <p className="text-xs text-surface-400 line-clamp-2 leading-relaxed">{item.content}</p>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-3">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ring-1 ${cat.color}`}>
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: cat.dot }} />
                         {cat.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-3">
                       <button onClick={() => handleToggle(item.id)}
                         className={`text-xs px-2 py-0.5 rounded-full ring-1 transition-colors ${
                           item.is_active
@@ -319,8 +320,8 @@ export default function KnowledgePage() {
                         {item.is_active ? 'Aktif' : 'Nonaktif'}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                    <td className="px-3 sm:px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button onClick={() => openEdit(item)}
                           className="p-1.5 text-surface-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
                           <Edit3 className="w-3.5 h-3.5" />
@@ -335,7 +336,8 @@ export default function KnowledgePage() {
                 )
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       )}
 
@@ -348,9 +350,9 @@ export default function KnowledgePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] flex flex-col"
+              className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full sm:max-w-2xl max-h-[92vh] flex flex-col"
             >
-              <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between shrink-0">
+              <div className="px-4 sm:px-6 py-4 border-b border-surface-100 flex items-center justify-between shrink-0">
                 <div>
                   <h2 className="text-base font-semibold text-surface-800">Preview: {docxName}</h2>
                   <p className="text-xs text-surface-400 mt-0.5">{docxChunks.length} chunks ditemukan — pilih yang ingin disimpan</p>
@@ -362,7 +364,7 @@ export default function KnowledgePage() {
               </div>
 
               {docxResult ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 gap-3">
+                <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 gap-3">
                   <div className="w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center">
                     <CheckCircle2 className="w-7 h-7 text-primary-600" />
                   </div>
@@ -374,7 +376,7 @@ export default function KnowledgePage() {
                 </div>
               ) : (
                 <>
-                  <div className="px-6 py-3 border-b border-surface-100 flex items-center gap-4 shrink-0">
+                  <div className="px-4 sm:px-6 py-3 border-b border-surface-100 flex items-center gap-4 shrink-0">
                     <div className="flex items-center gap-2">
                       <label className="text-xs font-medium text-surface-600">Kategori:</label>
                       <select value={docxCategory} onChange={e => setDocxCategory(e.target.value)}
@@ -391,7 +393,7 @@ export default function KnowledgePage() {
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+                  <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3">
                     {docxChunks.map((chunk, i) => {
                       const selected = docxSelected.includes(i)
                       return (
@@ -416,7 +418,7 @@ export default function KnowledgePage() {
                     })}
                   </div>
 
-                  <div className="px-6 py-4 border-t border-surface-100 flex items-center justify-between shrink-0">
+                  <div className="px-4 sm:px-6 py-4 border-t border-surface-100 flex items-center justify-between shrink-0">
                     <p className="text-xs text-surface-400">Embedding akan digenerate untuk setiap chunk yang dipilih</p>
                     <div className="flex gap-3">
                       <button onClick={() => setDocxModal(false)} className="btn-secondary text-xs py-2">Batal</button>
@@ -443,9 +445,9 @@ export default function KnowledgePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-auto max-h-[92vh] overflow-y-auto"
+              className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full sm:max-w-xl mx-auto max-h-[92vh] overflow-y-auto"
             >
-              <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div className="px-4 sm:px-6 py-4 border-b border-surface-100 flex items-center justify-between sticky top-0 bg-white z-10">
                 <div>
                   <h2 className="text-base font-semibold text-surface-800">{modal === 'add' ? 'Tambah Dokumen' : 'Edit Dokumen'}</h2>
                   <p className="text-xs text-surface-400 mt-0.5">Embedding digenerate otomatis via OpenAI</p>
@@ -455,7 +457,7 @@ export default function KnowledgePage() {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-surface-600 mb-1">Kategori *</label>
                   <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="input">

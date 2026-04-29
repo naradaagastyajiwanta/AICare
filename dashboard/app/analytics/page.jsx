@@ -22,10 +22,10 @@ export default function AnalyticsPage() {
   }, [])
 
   if (loading) return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="animate-pulse space-y-6">
         <div className="h-8 w-48 bg-surface-200 rounded" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-28 bg-surface-200 rounded-xl" />
           ))}
@@ -76,9 +76,9 @@ export default function AnalyticsPage() {
   ]
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div className="mb-2">
-        <h1 className="text-2xl font-bold text-surface-900 flex items-center gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold text-surface-900 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
             <BarChart3 className="w-5 h-5 text-primary-600" />
           </div>

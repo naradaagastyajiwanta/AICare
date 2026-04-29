@@ -50,11 +50,11 @@ export default function CompliancePage() {
   const { patients, dates } = groupByPatient(data)
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Kepatuhan Minum Obat</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900">Kepatuhan Minum Obat</h1>
           <p className="text-sm text-surface-500 mt-1">Tracking konfirmasi minum obat per pasien</p>
         </div>
         <div className="relative">
@@ -84,10 +84,10 @@ export default function CompliancePage() {
         <>
           <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="text-sm min-w-full">
+              <table className="text-sm min-w-[640px]">
                 <thead>
                   <tr className="bg-surface-50 border-b border-surface-200">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider sticky left-0 bg-surface-50 z-10 min-w-[180px]">
+                    <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider sticky left-0 bg-surface-50 z-10 min-w-[180px]">
                       Pasien
                     </th>
                     {dates.map(d => (
@@ -105,7 +105,7 @@ export default function CompliancePage() {
 
                     return (
                       <tr key={p.id} className="hover:bg-surface-50/60 transition-colors">
-                        <td className="px-4 py-3 sticky left-0 bg-white hover:bg-surface-50/60 z-10 min-w-[180px]">
+                        <td className="px-3 sm:px-4 py-3 sticky left-0 bg-white hover:bg-surface-50/60 z-10 min-w-[180px]">
                           <div className="flex items-center gap-3">
                             <Avatar name={p.name} size="sm" />
                             <div>

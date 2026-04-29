@@ -46,9 +46,9 @@ export default function WhatsAppPage() {
   const StatusIcon = config.icon
 
   return (
-    <div className="p-6 lg:p-8 max-w-xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-surface-900 flex items-center gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold text-surface-900 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
             <MessageCircle className="w-5 h-5 text-primary-600" />
           </div>
@@ -59,7 +59,7 @@ export default function WhatsAppPage() {
 
       {/* Status Card */}
       <Card padding="lg" className="mb-5">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <span className="text-sm font-medium text-surface-600">Status Koneksi</span>
           <Badge
             variant={config.color}
@@ -72,7 +72,7 @@ export default function WhatsAppPage() {
         </div>
 
         {status === 'connected' && (
-          <div className="flex items-center gap-4 p-4 bg-primary-50 rounded-xl border border-primary-100">
+          <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-primary-50 rounded-xl border border-primary-100">
             <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
               <Smartphone className="w-6 h-6 text-primary-600" />
             </div>
@@ -104,7 +104,7 @@ export default function WhatsAppPage() {
         )}
 
         {(status === 'starting' || status === 'unknown') && (
-          <div className="flex items-center gap-4 p-4 bg-warning-50 rounded-xl border border-warning-100">
+          <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-warning-50 rounded-xl border border-warning-100">
             <Loader2 className="w-5 h-5 text-warning-600 animate-spin" />
             <div>
               <p className="text-sm font-medium text-warning-800">Menghubungkan ke WhatsApp...</p>
@@ -114,7 +114,7 @@ export default function WhatsAppPage() {
         )}
 
         {(status === 'disconnected' || status === 'stopped' || status === 'error') && (
-          <div className="flex items-center gap-4 p-4 bg-danger-50 rounded-xl border border-danger-100">
+          <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-danger-50 rounded-xl border border-danger-100">
             <WifiOff className="w-5 h-5 text-danger-600" />
             <div>
               <p className="text-sm font-semibold text-danger-800">WhatsApp Tidak Terhubung</p>

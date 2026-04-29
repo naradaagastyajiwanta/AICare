@@ -114,11 +114,11 @@ export default function EducationPage() {
   const filtered = filter === 'all' ? materials : materials.filter(m => m.category === filter)
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Materi Edukasi</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900">Materi Edukasi</h1>
           <p className="text-sm text-surface-500 mt-1">Kelola konten edukasi untuk dikirim ke pasien via WhatsApp</p>
         </div>
         <button onClick={openModal} className="btn-primary">
@@ -128,12 +128,12 @@ export default function EducationPage() {
       </div>
 
       {/* Category filter tabs */}
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
         {[['all', 'Semua'], ...Object.entries(CATEGORIES).map(([k, v]) => [k, v.label])].map(([key, label]) => (
           <button
             key={key}
             onClick={() => setFilter(key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap ${
               filter === key
                 ? 'bg-surface-800 text-white border-surface-800 shadow-sm'
                 : 'bg-white text-surface-600 border-surface-200 hover:border-surface-300'
@@ -243,16 +243,16 @@ export default function EducationPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto"
+              className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto"
             >
-              <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div className="px-4 sm:px-6 py-4 border-b border-surface-100 flex items-center justify-between sticky top-0 bg-white z-10">
                 <h2 className="text-base font-semibold text-surface-800">Tambah Materi Edukasi</h2>
                 <button onClick={() => setModal(false)} className="text-surface-400 hover:text-surface-600 transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-4">
                 {/* Image upload area */}
                 <div>
                   <label className="block text-xs font-medium text-surface-600 mb-2">Gambar / Poster (opsional)</label>
