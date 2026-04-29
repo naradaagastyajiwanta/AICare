@@ -76,16 +76,35 @@ app.listen(PORT, () => {
   waService.connect()
   startCronJobs(waService)
 
-  waService.on('message', async ({ phone, text, jid }) => {
-    console.log(`[WA] Message from ${phone}: ${text}`)
-    try {
-      const reply = await handleChatMessage(phone, text, waService)
-      if (reply) await waService.sendMessage(jid, reply)
-    } catch (err) {
-      console.error('[WA] Failed to handle message:', err.message)
-      try {
-        await waService.sendMessage(jid, 'Maaf, sistem sedang sibuk. Mohon coba lagi beberapa saat.')
-      } catch {}
+  // Debounce: accumulate rapid messages from the same user, process as one
+  const DEBOUNCE_MS = 1500
+  const pending = new Map() // phone → { timer, texts[], jid }
+
+  waService.on('message', ({ phone, text, jid }) => {
+    if (pending.has(phone)) {
+      const entry = pending.get(phone)
+      clearTimeout(entry.timer)
+      entry.texts.push(text)
+    } else {
+      pending.set(phone, { texts: [text], jid })
     }
+
+    const entry = pending.get(phone)
+    entry.timer = setTimeout(async () => {
+      pending.delete(phone)
+      const combined = entry.texts.join('\n')
+      console.log(`[WA] Processing ${entry.texts.length} msg(s) from ${phone}: ${combined}`)
+      try {
+        const reply = await handleChatMessage(phone, combined, waService)
+        if (reply) await waService.sendMessage(entry.jid, reply)
+        else await waService.stopTyping(entry.jid)
+      } catch (err) {
+        console.error('[WA] Failed to handle message:', err.message)
+        await waService.stopTyping(entry.jid)
+        try {
+          await waService.sendMessage(entry.jid, 'Maaf, sistem sedang sibuk. Mohon coba lagi beberapa saat.')
+        } catch {}
+      }
+    }, DEBOUNCE_MS)
   })
 })

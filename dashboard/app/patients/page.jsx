@@ -3,7 +3,8 @@ import { useEffect, useState, useMemo } from 'react'
 import { api } from '../../lib/api'
 import Badge from '../../components/ui/Badge'
 import Avatar from '../../components/ui/Avatar'
-import { SkeletonTable } from '../../components/ui/Skeleton'
+import Card from '../../components/ui/Card'
+import { SkeletonCard } from '../../components/ui/Skeleton'
 import { useToast } from '../../components/ui/Toast'
 import {
   Search,
@@ -16,7 +17,6 @@ import {
   UserCheck,
   Filter,
   X,
-  ChevronDown,
   AlertTriangle,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -98,13 +98,13 @@ function Modal({ patient, onClose, onSave }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2 }}
-        className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full sm:max-w-lg max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto"
       >
         <div className="px-4 sm:px-6 py-4 border-b border-surface-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center gap-3">
@@ -128,13 +128,12 @@ function Modal({ patient, onClose, onSave }) {
             </div>
           )}
 
-          {/* Section: Data Pribadi */}
           <div>
             <h3 className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3 flex items-center gap-2">
               <UserCheck className="w-3.5 h-3.5" />
               Data Pribadi
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Nama Lengkap *" value={form.name} onChange={set('name')} required />
               <Field label="No. WhatsApp *" value={form.phone} onChange={set('phone')} placeholder="628xxx" required />
               <Field label="Nama Obat *" value={form.medicine_name} onChange={set('medicine_name')} required />
@@ -142,7 +141,6 @@ function Modal({ patient, onClose, onSave }) {
             </div>
           </div>
 
-          {/* Section: Wali */}
           <div>
             <h3 className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3">Data Wali</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -151,7 +149,6 @@ function Modal({ patient, onClose, onSave }) {
             </div>
           </div>
 
-          {/* Section: Reminder Times */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-surface-500 uppercase tracking-wider flex items-center gap-2">
@@ -160,38 +157,41 @@ function Modal({ patient, onClose, onSave }) {
               </h3>
               <button type="button" onClick={addReminderTime}
                 className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
-                <Plus className="w-3 h-3" /> Tambah Jam
+                <Plus className="w-3 h-3" /> Tambah
               </button>
             </div>
             <div className="space-y-2">
               {form.reminder_times.map((rt, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-surface-50 rounded-lg px-3 py-2">
-                  <input type="time" value={rt.time}
-                    onChange={(e) => updateReminderTime(idx, 'time', e.target.value)}
-                    className="input w-24 py-1.5" />
-                  <select value={rt.category || 'medication'}
-                    onChange={(e) => updateReminderTime(idx, 'category', e.target.value)}
-                    className="input w-28 py-1.5 text-xs">
-                    <option value="medication">Obat 💊</option>
-                    <option value="activity">Aktivitas 🏃</option>
-                    <option value="diet">Pola Makan 🥗</option>
-                  </select>
-                  <input type="text" value={rt.label}
-                    onChange={(e) => updateReminderTime(idx, 'label', e.target.value)}
-                    placeholder="Label (opsional)"
-                    className="input flex-1 py-1.5 text-xs" />
-                  {form.reminder_times.length > 1 && (
-                    <button type="button" onClick={() => removeReminderTime(idx)}
-                      className="text-surface-300 hover:text-danger-500 transition-colors p-1">
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
+                <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-surface-50 rounded-lg px-3 py-2.5">
+                  <div className="flex items-center gap-2 w-full">
+                    <input type="time" value={rt.time}
+                      onChange={(e) => updateReminderTime(idx, 'time', e.target.value)}
+                      className="input w-24 py-1.5 shrink-0" />
+                    <select value={rt.category || 'medication'}
+                      onChange={(e) => updateReminderTime(idx, 'category', e.target.value)}
+                      className="input w-28 py-1.5 text-xs shrink-0">
+                      <option value="medication">Obat 💊</option>
+                      <option value="activity">Aktivitas 🏃</option>
+                      <option value="diet">Pola Makan 🥗</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2 w-full">
+                    <input type="text" value={rt.label}
+                      onChange={(e) => updateReminderTime(idx, 'label', e.target.value)}
+                      placeholder="Label (opsional)"
+                      className="input flex-1 py-1.5 text-xs" />
+                    {form.reminder_times.length > 1 && (
+                      <button type="button" onClick={() => removeReminderTime(idx)}
+                        className="text-surface-300 hover:text-danger-500 transition-colors p-1 shrink-0">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Status Toggle */}
           <label className="flex items-center gap-3 p-3 bg-surface-50 rounded-lg cursor-pointer">
             <input id="is_active" type="checkbox" checked={form.is_active} onChange={toggle('is_active')}
               className="w-4 h-4 text-primary-600 border-surface-300 rounded focus:ring-primary-400" />
@@ -226,7 +226,7 @@ export default function PatientsPage() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all') // all | active | inactive
+  const [statusFilter, setStatusFilter] = useState('all')
   const { addToast } = useToast()
 
   function load() {
@@ -269,7 +269,7 @@ export default function PatientsPage() {
   }, [patients, search, statusFilter])
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
         <div>
@@ -312,108 +312,189 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      {/* Table */}
       {loading ? (
-        <SkeletonTable rows={6} cols={7} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
       ) : (
-        <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden -mx-2 sm:mx-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[720px]">
-              <thead>
-                <tr className="bg-surface-50 border-b border-surface-200">
-                  {['Pasien', 'No. WA', 'Obat', 'Jam', 'Wali', 'Kepatuhan', 'Status', ''].map(h => (
-                    <th key={h} className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider whitespace-nowrap">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-100">
-                {filteredPatients.map(p => {
-                  const rate = p.compliance_rate != null ? Number(p.compliance_rate) : null
-                  const rateColor = rate >= 80 ? 'success' : rate >= 50 ? 'warning' : 'danger'
+        <>
+          {/* ─── MOBILE: Card List ─── */}
+          <div className="sm:hidden space-y-3">
+            {filteredPatients.map(p => {
+              const rate = p.compliance_rate != null ? Number(p.compliance_rate) : null
+              const rateColor = rate >= 80 ? 'success' : rate >= 50 ? 'warning' : 'danger'
+              return (
+                <Card key={p.id} padding="md">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <Avatar name={p.name} size="sm" />
+                      <div>
+                        <p className="font-semibold text-surface-800 text-sm">{p.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Pill className="w-3 h-3 text-primary-500" />
+                          <span className="text-xs text-surface-500">{p.medicine_name}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {rate != null && (
+                        <Badge variant={rateColor} dot>{rate}%</Badge>
+                      )}
+                      <button
+                        onClick={() => handleToggleStatus(p.id, p.name, !p.is_active)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
+                          p.is_active ? 'bg-primary-500' : 'bg-surface-300'
+                        }`}
+                      >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                          p.is_active ? 'translate-x-5' : 'translate-x-1'
+                        }`} />
+                      </button>
+                    </div>
+                  </div>
 
-                  return (
-                    <tr key={p.id} className="group hover:bg-surface-50/80 transition-colors">
-                      <td className="px-3 sm:px-4 py-3.5">
-                        <div className="flex items-center gap-2.5 sm:gap-3">
-                          <Avatar name={p.name} size="sm" />
-                          <span className="font-semibold text-surface-800 text-sm">{p.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-4 py-3.5 text-surface-500 font-mono text-xs">{p.phone}</td>
-                      <td className="px-3 sm:px-4 py-3.5">
-                        <div className="flex items-center gap-1.5">
-                          <Pill className="w-3.5 h-3.5 text-primary-500 shrink-0" />
-                          <span className="text-surface-700 text-xs sm:text-sm">{p.medicine_name}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-4 py-3.5">
-                        <div className="flex flex-wrap gap-1">
-                          {(p.reminder_times || []).map((rt, i) => (
-                            <span key={i} className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-medium ring-1 ${CATEGORY_COLORS[rt.category] || CATEGORY_COLORS.medication}`}>
-                              <span className="hidden sm:inline">{CATEGORY_EMOJI[rt.category]}</span> {rt.time}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-4 py-3.5 text-surface-500 text-xs sm:text-sm">{p.guardian_name || '–'}</td>
-                      <td className="px-3 sm:px-4 py-3.5">
-                        {rate != null ? (
-                          <Badge variant={rateColor} dot>{rate}%</Badge>
-                        ) : (
-                          <span className="text-xs text-surface-400">–</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <button
-                          onClick={() => handleToggleStatus(p.id, p.name, !p.is_active)}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
-                            p.is_active ? 'bg-primary-500' : 'bg-surface-300'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                  <div className="grid grid-cols-2 gap-2 text-xs text-surface-500 mb-3">
+                    <div>
+                      <span className="text-surface-400">No. WA</span>
+                      <p className="font-mono text-surface-700">{p.phone}</p>
+                    </div>
+                    <div>
+                      <span className="text-surface-400">Wali</span>
+                      <p className="text-surface-700">{p.guardian_name || '–'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {(p.reminder_times || []).map((rt, i) => (
+                      <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium ring-1 ${CATEGORY_COLORS[rt.category] || CATEGORY_COLORS.medication}`}>
+                        {CATEGORY_EMOJI[rt.category]} {rt.time}{rt.label ? ` · ${rt.label}` : ''}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-3 border-t border-surface-100">
+                    <button onClick={() => setModal(p)}
+                      className="flex-1 py-2 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                      <Edit3 className="w-3.5 h-3.5" /> Edit
+                    </button>
+                    <button onClick={() => handleToggleStatus(p.id, p.name, !p.is_active)}
+                      className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+                        p.is_active
+                          ? 'text-danger-700 bg-danger-50 hover:bg-danger-100'
+                          : 'text-primary-700 bg-primary-50 hover:bg-primary-100'
+                      }`}>
+                      {p.is_active ? <><PowerOff className="w-3.5 h-3.5" /> Nonaktifkan</> : <><Power className="w-3.5 h-3.5" /> Aktifkan</>}
+                    </button>
+                  </div>
+                </Card>
+              )
+            })}
+            {filteredPatients.length === 0 && (
+              <div className="text-center py-12 text-surface-400">
+                <Search className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">{search ? 'Tidak ada pasien yang cocok' : 'Belum ada pasien terdaftar'}</p>
+              </div>
+            )}
+          </div>
+
+          {/* ─── DESKTOP: Table ─── */}
+          <div className="hidden sm:block bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[720px]">
+                <thead>
+                  <tr className="bg-surface-50 border-b border-surface-200">
+                    {['Pasien', 'No. WA', 'Obat', 'Jam', 'Wali', 'Kepatuhan', 'Status', ''].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-100">
+                  {filteredPatients.map(p => {
+                    const rate = p.compliance_rate != null ? Number(p.compliance_rate) : null
+                    const rateColor = rate >= 80 ? 'success' : rate >= 50 ? 'warning' : 'danger'
+
+                    return (
+                      <tr key={p.id} className="group hover:bg-surface-50/80 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <Avatar name={p.name} size="sm" />
+                            <span className="font-semibold text-surface-800">{p.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 text-surface-500 font-mono text-xs">{p.phone}</td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <Pill className="w-3.5 h-3.5 text-primary-500 shrink-0" />
+                            <span className="text-surface-700">{p.medicine_name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex flex-wrap gap-1">
+                            {(p.reminder_times || []).map((rt, i) => (
+                              <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium ring-1 ${CATEGORY_COLORS[rt.category] || CATEGORY_COLORS.medication}`}>
+                                {CATEGORY_EMOJI[rt.category]} {rt.time}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 text-surface-500">{p.guardian_name || '–'}</td>
+                        <td className="px-4 py-3.5">
+                          {rate != null ? (
+                            <Badge variant={rateColor} dot>{rate}%</Badge>
+                          ) : (
+                            <span className="text-xs text-surface-400">–</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <button
+                            onClick={() => handleToggleStatus(p.id, p.name, !p.is_active)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
+                              p.is_active ? 'bg-primary-500' : 'bg-surface-300'
+                            }`}
+                          >
+                            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
                               p.is_active ? 'translate-x-5' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </td>
-                      <td className="px-3 sm:px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setModal(p)}
-                            className="p-1.5 text-surface-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                            title="Edit">
-                            <Edit3 className="w-4 h-4" />
+                            }`} />
                           </button>
-                          <button onClick={() => handleToggleStatus(p.id, p.name, !p.is_active)}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              p.is_active
-                                ? 'text-surface-400 hover:text-danger-600 hover:bg-danger-50'
-                                : 'text-surface-400 hover:text-primary-600 hover:bg-primary-50'
-                            }`}
-                            title={p.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
-                            {p.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                          </button>
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => setModal(p)}
+                              className="p-1.5 text-surface-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                              title="Edit">
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleToggleStatus(p.id, p.name, !p.is_active)}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                p.is_active
+                                  ? 'text-surface-400 hover:text-danger-600 hover:bg-danger-50'
+                                  : 'text-surface-400 hover:text-primary-600 hover:bg-primary-50'
+                              }`}
+                              title={p.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
+                              {p.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {filteredPatients.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-12 text-center">
+                        <div className="flex flex-col items-center text-surface-400">
+                          <Search className="w-8 h-8 mb-2 opacity-40" />
+                          <p className="text-sm">{search ? 'Tidak ada pasien yang cocok' : 'Belum ada pasien terdaftar'}</p>
                         </div>
                       </td>
                     </tr>
-                  )
-                })}
-                {filteredPatients.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center">
-                      <div className="flex flex-col items-center text-surface-400">
-                        <Search className="w-8 h-8 mb-2 opacity-40" />
-                        <p className="text-sm">{search ? 'Tidak ada pasien yang cocok' : 'Belum ada pasien terdaftar'}</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Footer count */}

@@ -151,6 +151,12 @@ class WhatsAppService extends EventEmitter {
             ?? msg.message?.extendedTextMessage?.text
             ?? null
           if (!text) continue
+
+          // Mark message as read (blue double tick)
+          try { await this.sock.readMessages([msg.key]) } catch {}
+          // Show typing indicator while processing
+          try { await this.sock.sendPresenceUpdate('composing', msg.key.remoteJid) } catch {}
+
           this.emit('message', { phone, text, jid: msg.key.remoteJid })
         }
       })
@@ -164,6 +170,9 @@ class WhatsAppService extends EventEmitter {
     if (!this.sock || this.status !== 'connected') {
       throw new Error('WhatsApp not connected')
     }
+    // Stop typing indicator before sending
+    try { await this.sock.sendPresenceUpdate('paused', jid) } catch {}
+
     if (typeof content === 'string') {
       await this.sock.sendMessage(jid, { text: content })
     } else if (content.image) {
@@ -171,6 +180,11 @@ class WhatsAppService extends EventEmitter {
     } else {
       throw new Error('Unsupported message content type')
     }
+  }
+
+  async stopTyping(jid) {
+    if (!this.sock || this.status !== 'connected') return
+    try { await this.sock.sendPresenceUpdate('paused', jid) } catch {}
   }
 
   async disconnect() {
