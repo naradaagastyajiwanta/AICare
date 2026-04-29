@@ -422,7 +422,7 @@ export default function KnowledgePage() {
       {/* DOCX Preview Modal */}
       <AnimatePresence>
         {docxModal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start sm:items-center justify-center z-[60] p-0 sm:p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -436,7 +436,7 @@ export default function KnowledgePage() {
                   <p className="text-xs text-surface-400 mt-0.5">{docxChunks.length} chunks ditemukan — pilih yang ingin disimpan</p>
                 </div>
                 <button onClick={() => { setDocxModal(false); setDocxResult(null) }}
-                  className="text-surface-400 hover:text-surface-600 transition-colors p-2 -mr-2">
+                  className="text-surface-400 hover:text-surface-600 transition-colors p-2.5 -mr-2 rounded-xl hover:bg-surface-100">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -517,7 +517,7 @@ export default function KnowledgePage() {
       {/* Add / Edit Modal */}
       <AnimatePresence>
         {modal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start sm:items-center justify-center z-[60] p-0 sm:p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -530,7 +530,7 @@ export default function KnowledgePage() {
                   <h2 className="text-base font-bold text-surface-800">{modal === 'add' ? 'Tambah Dokumen' : 'Edit Dokumen'}</h2>
                   <p className="text-xs text-surface-400 mt-0.5">Embedding digenerate otomatis via OpenAI</p>
                 </div>
-                <button onClick={() => setModal(false)} className="text-surface-400 hover:text-surface-600 transition-colors p-2 -mr-2">
+                <button onClick={() => setModal(false)} className="text-surface-400 hover:text-surface-600 transition-colors p-2.5 -mr-2 rounded-xl hover:bg-surface-100">
                   <X className="w-5 h-5" />
                 </button>
               </div>
