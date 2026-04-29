@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../../lib/api'
 import Badge from '../../components/ui/Badge'
 import { useToast } from '../../components/ui/Toast'
-import { Brain, Plus, Search, X, Loader2, FileText, Trash2, Edit3 } from 'lucide-react'
+import { Brain, Plus, Search, X, Loader2, FileText, Trash2, Edit3, CheckSquare, CheckCircle2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const CATEGORIES = {
@@ -25,6 +25,8 @@ export default function KnowledgePage() {
   const [filter,    setFilter]    = useState('all')
   const [search,    setSearch]    = useState('')
   const [deleting,  setDeleting]  = useState(null)
+  const [selected,  setSelected]  = useState(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const { addToast } = useToast()
 
   // DOCX upload state
@@ -80,8 +82,37 @@ export default function KnowledgePage() {
     setDeleting(id)
     await api.deleteKnowledge(id).catch(() => {})
     setDeleting(null)
+    setSelected(s => { const n = new Set(s); n.delete(id); return n })
     addToast('Dokumen dihapus', 'success')
     load()
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selected]
+    if (!confirm(`Hapus ${ids.length} dokumen yang dipilih?`)) return
+    setBulkDeleting(true)
+    try {
+      const res = await api.bulkDeleteKnowledge(ids)
+      setSelected(new Set())
+      addToast(`${res.deleted} dokumen berhasil dihapus`, 'success')
+      load()
+    } catch (err) {
+      addToast(err.message, 'error')
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
+
+  function toggleSelect(id) {
+    setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === filtered.length && filtered.length > 0) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filtered.map(i => i.id)))
+    }
   }
 
   // DOCX upload flow
@@ -214,22 +245,60 @@ export default function KnowledgePage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+          {/* Bulk action bar */}
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between px-4 py-2.5 bg-primary-50 border-b border-primary-100">
+              <span className="text-xs font-medium text-primary-700">
+                <CheckSquare className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+                {selected.size} dokumen dipilih
+              </span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSelected(new Set())}
+                  className="text-xs text-primary-600 hover:text-primary-800 px-2 py-1 rounded hover:bg-primary-100 transition-colors">
+                  Batalkan pilihan
+                </button>
+                <button onClick={handleBulkDelete} disabled={bulkDeleting}
+                  className="flex items-center gap-1.5 text-xs text-white bg-danger-600 hover:bg-danger-700 disabled:opacity-60 px-3 py-1.5 rounded-lg transition-colors font-medium">
+                  {bulkDeleting
+                    ? <><Loader2 className="w-3 h-3 animate-spin" /> Menghapus...</>
+                    : <><Trash2 className="w-3 h-3" /> Hapus {selected.size} dokumen</>}
+                </button>
+              </div>
+            </div>
+          )}
+
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-surface-50 border-b border-surface-200">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-10">#</th>
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={filtered.length > 0 && selected.size === filtered.length}
+                    ref={el => { if (el) el.indeterminate = selected.size > 0 && selected.size < filtered.length }}
+                    onChange={toggleSelectAll}
+                    className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 cursor-pointer"
+                  />
+                </th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider">Judul & Konten</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-28">Kategori</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-20">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-28">Aksi</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-24">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-100">
-              {filtered.map((item, idx) => {
+              {filtered.map((item) => {
                 const cat = CATEGORIES[item.category] || CATEGORIES.umum
+                const isSelected = selected.has(item.id)
                 return (
-                  <tr key={item.id} className={`hover:bg-surface-50/60 transition-colors ${!item.is_active ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-3 text-xs text-surface-400">{idx + 1}</td>
+                  <tr key={item.id} className={`transition-colors ${isSelected ? 'bg-primary-50/50' : 'hover:bg-surface-50/60'} ${!item.is_active ? 'opacity-50' : ''}`}>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(item.id)}
+                        className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 cursor-pointer"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <p className="font-semibold text-surface-800 mb-0.5">{item.title}</p>
                       <p className="text-xs text-surface-400 line-clamp-2 leading-relaxed">{item.content}</p>

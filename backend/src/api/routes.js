@@ -725,6 +725,19 @@ router.patch('/knowledge/:id/status', async (req, res) => {
   }
 })
 
+router.delete('/knowledge/bulk', async (req, res) => {
+  const { ids } = req.body
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'ids array is required' })
+  }
+  try {
+    const result = await db.query('DELETE FROM knowledge_base WHERE id = ANY($1) RETURNING id', [ids])
+    res.json({ deleted: result.rowCount })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 router.delete('/knowledge/:id', async (req, res) => {
   try {
     await db.query('DELETE FROM knowledge_base WHERE id = $1', [req.params.id])
@@ -757,7 +770,7 @@ router.post('/knowledge/bulk', async (req, res) => {
     return res.status(400).json({ error: 'chunks array is required' })
   }
 
-  const BATCH = 5  // embed 5 at a time to stay within OpenAI rate limits
+  const BATCH = 20  // 20 parallel embeddings per batch — well within OpenAI rate limits (3000 RPM)
   const results = []
   const errors  = []
 

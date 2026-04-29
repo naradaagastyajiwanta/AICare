@@ -90,7 +90,7 @@ export function formatKnowledgeContext(docs) {
 
 // ─── DOCX Parsing & Chunking ──────────────────────────────────────────────────
 
-const CHUNK_MIN  = 80   // chars — skip lines that are too short (headers, page numbers)
+const CHUNK_MIN  = 100  // chars — skip lines that are too short (headers, page numbers)
 const CHUNK_MAX  = 800  // chars — split paragraphs that are too long
 
 /**
@@ -125,13 +125,30 @@ export async function parseDocxToChunks(buffer, docName) {
   const { value: rawText } = await mammoth.extractRawText({ buffer })
 
   // Split on blank lines (paragraph separators)
-  const paragraphs = rawText
+  const rawParagraphs = rawText
     .split(/\n{2,}/)
     .map(p => p.replace(/\n/g, ' ').trim())
-    .filter(p => p.length >= CHUNK_MIN)
+    .filter(p => p.length > 0)
+
+  // Q&A-aware merge: "Q: ..." immediately followed by "A: ..." → single chunk
+  // so the question provides context for the answer in RAG retrieval.
+  const merged = []
+  let i = 0
+  while (i < rawParagraphs.length) {
+    const curr = rawParagraphs[i]
+    const next = rawParagraphs[i + 1]
+    if (/^Q\s*:/i.test(curr) && next && /^A\s*:/i.test(next)) {
+      merged.push(`${curr}\n${next}`)
+      i += 2
+    } else {
+      merged.push(curr)
+      i++
+    }
+  }
 
   const chunks = []
-  for (const para of paragraphs) {
+  for (const para of merged) {
+    if (para.length < CHUNK_MIN) continue
     if (para.length <= CHUNK_MAX) {
       chunks.push(para)
     } else {

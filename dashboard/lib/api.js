@@ -38,6 +38,7 @@ export const api = {
   updateKnowledge:    (id, data)   => request(`/knowledge/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   toggleKnowledge:    (id)         => request(`/knowledge/${id}/status`, { method: 'PATCH' }),
   deleteKnowledge:    (id)         => request(`/knowledge/${id}`, { method: 'DELETE' }),
+  bulkDeleteKnowledge:(ids)        => request('/knowledge/bulk', { method: 'DELETE', body: JSON.stringify({ ids }) }),
   parseDocx:          (formData)   => fetch('/api/knowledge/parse-docx', { method: 'POST', body: formData }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(new Error(e.error)))),
   bulkSaveKnowledge:  (data)       => request('/knowledge/bulk', { method: 'POST', body: JSON.stringify(data) }),
 

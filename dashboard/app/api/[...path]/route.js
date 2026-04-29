@@ -20,7 +20,12 @@ async function proxy(req, { params }) {
   if (!isMultipart) headers['Content-Type'] = 'application/json'
 
   const init = { method: req.method, headers, cache: 'no-store' }
-  if (req.signal) init.signal = req.signal
+  // For GET requests, forward the client abort signal so navigation cancels the fetch.
+  // For mutating requests, use an independent 5-minute timeout — the backend must be
+  // allowed to finish even if the browser disconnects (e.g. bulk embedding 200+ chunks).
+  init.signal = (req.method === 'GET' && req.signal)
+    ? req.signal
+    : AbortSignal.timeout(300_000)
 
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     if (isMultipart) {
