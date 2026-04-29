@@ -72,6 +72,11 @@
     font-feature-settings: 'cv11', 'ss01';
   }
 
+  /* Safe area padding for PWA / iOS home indicator */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   /* Custom scrollbar — blue-tinted */
   ::-webkit-scrollbar {
     width: 5px;
