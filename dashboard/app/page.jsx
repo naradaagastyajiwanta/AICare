@@ -100,21 +100,25 @@ export default function OverviewPage() {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6 lg:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">{greeting} 👋</h1>
-          <p className="text-sm text-surface-500 mt-1 flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5" />
-            {format(today, 'EEEE, d MMMM yyyy')}
-            <span className="text-surface-300">|</span>
-            <Clock className="w-3.5 h-3.5" />
-            <span>{format(today, 'HH:mm')} WIB</span>
+          <h1 className="text-xl lg:text-2xl font-bold text-surface-900">{greeting} 👋</h1>
+          <p className="text-sm text-surface-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />
+              {format(today, 'EEEE, d MMMM yyyy')}
+            </span>
+            <span className="hidden sm:inline text-surface-300">|</span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              {format(today, 'HH:mm')} WIB
+            </span>
           </p>
         </div>
         {pending > 0 && (
-          <div className="flex items-center gap-2 bg-danger-50 border border-danger-200 rounded-lg px-4 py-2.5">
-            <Bell className="w-4 h-4 text-danger-600" />
-            <span className="text-sm font-medium text-danger-700">
+          <div className="flex items-center gap-2 bg-danger-50 border border-danger-200 rounded-lg px-3 py-2 sm:px-4 sm:py-2.5">
+            <Bell className="w-4 h-4 text-danger-600 shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-danger-700">
               {pending} pasien belum merespons obat hari ini
             </span>
           </div>
@@ -123,24 +127,24 @@ export default function OverviewPage() {
 
       {/* Alert Banner */}
       {pending > 0 && (
-        <div className="mb-6 bg-gradient-to-r from-danger-50 to-warning-50 border border-danger-200 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-danger-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-danger-600" />
+        <div className="mb-5 lg:mb-6 bg-gradient-to-r from-danger-50 to-warning-50 border border-danger-200 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-danger-100 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-danger-600" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-danger-800">Perhatian: Pasien Belum Merespons</p>
             <p className="text-xs text-danger-600 mt-0.5">
-              {pending} pasien telah dikirimi reminder obat tapi belum mengonfirmasi. Pertimbangkan untuk menghubungi wali pasien.
+              {pending} pasien telah dikirimi reminder obat tapi belum mengonfirmasi.
             </p>
           </div>
-          <button className="btn-primary text-xs py-2 px-3 shrink-0">
+          <button className="btn-primary text-xs py-2 px-3 shrink-0 w-full sm:w-auto">
             Lihat Detail
           </button>
         </div>
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
         {loading ? (
           <>
             <SkeletonCard />
@@ -187,7 +191,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {loading ? (
           <>
             <SkeletonCard />
@@ -261,7 +265,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Weekly Trend */}
         <Card padding="lg" className="lg:col-span-2">
           <div className="flex items-center justify-between mb-5">

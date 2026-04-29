@@ -106,7 +106,7 @@ function Modal({ patient, onClose, onSave }) {
         transition={{ duration: 0.2 }}
         className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
       >
-        <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between sticky top-0 bg-white z-10">
+        <div className="px-4 sm:px-6 py-4 border-b border-surface-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center">
               {patient?.id ? <Edit3 className="w-4 h-4 text-primary-600" /> : <Plus className="w-4 h-4 text-primary-600" />}
@@ -115,12 +115,12 @@ function Modal({ patient, onClose, onSave }) {
               {patient?.id ? 'Edit Pasien' : 'Tambah Pasien Baru'}
             </h2>
           </div>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-600 transition-colors">
+          <button onClick={onClose} className="text-surface-400 hover:text-surface-600 transition-colors p-2 -mr-2">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-5">
           {err && (
             <div className="flex items-center gap-2 text-sm text-danger-700 bg-danger-50 rounded-lg px-3 py-2.5 border border-danger-200">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -145,7 +145,7 @@ function Modal({ patient, onClose, onSave }) {
           {/* Section: Wali */}
           <div>
             <h3 className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3">Data Wali</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Nama Wali" value={form.guardian_name} onChange={set('guardian_name')} />
               <Field label="No. WA Wali" value={form.guardian_phone} onChange={set('guardian_phone')} placeholder="628xxx" />
             </div>
@@ -198,11 +198,11 @@ function Modal({ patient, onClose, onSave }) {
             <span className="text-sm text-surface-700">Pasien aktif (menerima reminder)</span>
           </label>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-surface-100">
-            <button type="button" onClick={onClose} className="btn-secondary">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2 border-t border-surface-100">
+            <button type="button" onClick={onClose} className="btn-secondary w-full sm:w-auto">
               Batal
             </button>
-            <button type="submit" disabled={saving} className="btn-primary">
+            <button type="submit" disabled={saving} className="btn-primary w-full sm:w-auto">
               {saving ? 'Menyimpan...' : 'Simpan'}
             </button>
           </div>
@@ -271,9 +271,9 @@ export default function PatientsPage() {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Daftar Pasien</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900">Daftar Pasien</h1>
           <p className="text-sm text-surface-500 mt-1">Kelola data pasien dan jadwal pengingat</p>
         </div>
         <button onClick={() => setModal('add')} className="btn-primary">
@@ -284,7 +284,7 @@ export default function PatientsPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
           <input
             type="text"
@@ -294,13 +294,13 @@ export default function PatientsPage() {
             className="input pl-9"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-surface-400" />
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <Filter className="w-4 h-4 text-surface-400 shrink-0" />
           {['all', 'active', 'inactive'].map(f => (
             <button
               key={f}
               onClick={() => setStatusFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                 statusFilter === f
                   ? 'bg-surface-800 text-white shadow-sm'
                   : 'bg-white text-surface-600 border border-surface-200 hover:bg-surface-50'
@@ -316,13 +316,13 @@ export default function PatientsPage() {
       {loading ? (
         <SkeletonTable rows={6} cols={7} />
       ) : (
-        <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden -mx-2 sm:mx-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[720px]">
               <thead>
                 <tr className="bg-surface-50 border-b border-surface-200">
-                  {['Pasien', 'No. WA', 'Obat', 'Jam Reminder', 'Wali', 'Kepatuhan', 'Status', ''].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider whitespace-nowrap">
+                  {['Pasien', 'No. WA', 'Obat', 'Jam', 'Wali', 'Kepatuhan', 'Status', ''].map(h => (
+                    <th key={h} className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -335,30 +335,30 @@ export default function PatientsPage() {
 
                   return (
                     <tr key={p.id} className="group hover:bg-surface-50/80 transition-colors">
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-3">
+                      <td className="px-3 sm:px-4 py-3.5">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
                           <Avatar name={p.name} size="sm" />
-                          <span className="font-semibold text-surface-800">{p.name}</span>
+                          <span className="font-semibold text-surface-800 text-sm">{p.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-surface-500 font-mono text-xs">{p.phone}</td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 sm:px-4 py-3.5 text-surface-500 font-mono text-xs">{p.phone}</td>
+                      <td className="px-3 sm:px-4 py-3.5">
                         <div className="flex items-center gap-1.5">
-                          <Pill className="w-3.5 h-3.5 text-primary-500" />
-                          <span className="text-surface-700">{p.medicine_name}</span>
+                          <Pill className="w-3.5 h-3.5 text-primary-500 shrink-0" />
+                          <span className="text-surface-700 text-xs sm:text-sm">{p.medicine_name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 sm:px-4 py-3.5">
                         <div className="flex flex-wrap gap-1">
                           {(p.reminder_times || []).map((rt, i) => (
-                            <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium ring-1 ${CATEGORY_COLORS[rt.category] || CATEGORY_COLORS.medication}`}>
-                              {CATEGORY_EMOJI[rt.category]} {rt.time}{rt.label ? ` · ${rt.label}` : ''}
+                            <span key={i} className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-medium ring-1 ${CATEGORY_COLORS[rt.category] || CATEGORY_COLORS.medication}`}>
+                              <span className="hidden sm:inline">{CATEGORY_EMOJI[rt.category]}</span> {rt.time}
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-surface-500">{p.guardian_name || '–'}</td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 sm:px-4 py-3.5 text-surface-500 text-xs sm:text-sm">{p.guardian_name || '–'}</td>
+                      <td className="px-3 sm:px-4 py-3.5">
                         {rate != null ? (
                           <Badge variant={rateColor} dot>{rate}%</Badge>
                         ) : (
@@ -379,8 +379,8 @@ export default function PatientsPage() {
                           />
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className="px-3 sm:px-4 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <button onClick={() => setModal(p)}
                             className="p-1.5 text-surface-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                             title="Edit">

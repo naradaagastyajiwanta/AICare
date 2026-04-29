@@ -1,6 +1,6 @@
 import { db } from './db/index.js'
 import { upsertDailyScore } from './mcp/server.js'
-import { handleWithAI } from './ai-agent.js'
+import { handleWithAI, generateQuickReply } from './ai-agent.js'
 
 const YES_KEYWORDS = ['sudah', 'udah', 'iya', 'ya', '✅', 'done', 'diminum', 'oke', 'ok', 'yes']
 const NO_KEYWORDS = ['belum', 'blm', 'tidak', 'nggak', 'gak', 'ga', '❌', 'belum minum', 'no', 'gk', 'tdk']
@@ -27,14 +27,24 @@ function parseMedicationAnswer(text) {
   return null
 }
 
-function replyForMedication(patient, answer) {
+function replyForCategory(patient, answer, category) {
   const { name, medicine_name } = patient
-  if (answer === 'YES') {
-    return `Terima kasih ${name}! 🎉 Keren banget sudah minum obat *${medicine_name}* hari ini. Tetap semangat menjaga kesehatan ya! 💪`
+
+  if (category === 'diet') {
+    if (answer === 'YES') return `Hebat ${name}! 🥗 Keren banget sudah makan bergizi hari ini. Tubuh sehat dimulai dari makanan yang baik! 💪`
+    if (answer === 'NO')  return `Halo ${name}, jangan lupa makan makanan bergizi ya! 🥗 Pilih sayur, protein, dan karbohidrat kompleks untuk mendukung kesehatanmu. Semangat! 💪`
+    return `Halo ${name}, sudah makan bergizi hari ini? Balas *SUDAH* atau *BELUM* ya 😊`
   }
-  if (answer === 'NO') {
-    return `Halo ${name}, jangan lupa minum obat *${medicine_name}* ya! 🙏 Obat diminum secara rutin sangat penting untuk pemulihan. Semangat! 💊`
+
+  if (category === 'activity') {
+    if (answer === 'YES') return `Mantap ${name}! 🏃 Luar biasa sudah beraktivitas fisik hari ini. Terus jaga kebugaran ya! 💪`
+    if (answer === 'NO')  return `Halo ${name}, jangan lupa beraktivitas fisik ya! 🏃 Aktivitas ringan seperti jalan kaki juga sudah sangat bagus. Semangat! 💪`
+    return `Halo ${name}, sudah beraktivitas fisik hari ini? Balas *SUDAH* atau *BELUM* ya 😊`
   }
+
+  // medication (default)
+  if (answer === 'YES') return `Terima kasih ${name}! 🎉 Keren banget sudah minum obat *${medicine_name}* hari ini. Tetap semangat menjaga kesehatan ya! 💪`
+  if (answer === 'NO')  return `Halo ${name}, jangan lupa minum obat *${medicine_name}* ya! 🙏 Obat diminum secara rutin sangat penting untuk pemulihan. Semangat! 💊`
   return `Halo ${name}, kami kurang yakin apakah kamu sudah minum obat *${medicine_name}* hari ini. Bisa balas *SUDAH* atau *BELUM* ya? 😊`
 }
 
@@ -78,23 +88,30 @@ export async function handleChatMessage(phone, text, waService) {
       return `Halo ${name}! 📋 Jadwal minum obat *${patient.medicine_name}* setiap hari pukul *${time}* WIB. Jangan sampai terlewat ya! 💊`
     }
 
-    // 3. Quick path: clear medication response keywords → bypass AI for speed
-    const medAnswer = parseMedicationAnswer(text)
-    if (medAnswer) {
-      const reminderRes = await db.query(
-        `SELECT id FROM reminders WHERE patient_id = $1 AND scheduled_date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date AND category = $2`,
-        [patientId, 'medication']
+    // 3. Quick path: clear YES/NO keywords → check most recent reminder sent today for context
+    const answer = parseMedicationAnswer(text)
+    if (answer) {
+      // Determine category from most recently sent reminder today
+      const recentReminder = await db.query(
+        `SELECT id, category FROM reminders
+         WHERE patient_id = $1
+           AND scheduled_date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+           AND status = 'sent'
+         ORDER BY sent_at DESC NULLS LAST LIMIT 1`,
+        [patientId]
       )
-      const reminderId = reminderRes.rows[0]?.id ?? null
+      const category   = recentReminder.rows[0]?.category ?? 'medication'
+      const reminderId = recentReminder.rows[0]?.id ?? null
 
       await db.query(
         'INSERT INTO responses (patient_id, reminder_id, answer, raw_message, response_type) VALUES ($1, $2, $3, $4, $5)',
-        [patientId, reminderId, medAnswer, text, 'medication']
+        [patientId, reminderId, answer, text, category]
       )
-      console.log(`[CHAT] Medication response recorded: ${medAnswer} for patient ${patientId}`)
+      console.log(`[CHAT] ${category} response recorded: ${answer} for patient ${patientId}`)
 
       await upsertDailyScore(patientId)
-      return replyForMedication(patient, medAnswer)
+      const llmReply = await generateQuickReply(patient, answer, category)
+      return llmReply ?? replyForCategory(patient, answer, category)
     }
 
     // 4. Everything else → OpenAI agent

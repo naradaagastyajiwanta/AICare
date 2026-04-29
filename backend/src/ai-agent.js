@@ -136,6 +136,69 @@ Aturan:
 - Jangan menghakimi pasien`
 }
 
+// ─── Quick reply for fast-path YES/NO responses ───────────────────────────────
+
+const CATEGORY_LABEL = {
+  medication: 'minum obat',
+  diet:       'makan bergizi',
+  activity:   'aktivitas fisik',
+}
+
+function buildQuickReplyContext(patient, answer, category) {
+  const label = CATEGORY_LABEL[category] ?? category
+  const done  = answer === 'YES'
+
+  const detail = {
+    medication: done
+      ? `Pasien sudah minum obat ${patient.medicine_name}.`
+      : `Pasien belum minum obat ${patient.medicine_name}.`,
+    diet: done
+      ? 'Pasien sudah makan makanan bergizi hari ini.'
+      : 'Pasien belum makan makanan bergizi hari ini.',
+    activity: done
+      ? 'Pasien sudah beraktivitas fisik hari ini.'
+      : 'Pasien belum beraktivitas fisik hari ini.',
+  }[category] ?? ''
+
+  return `Kamu adalah AICare, asisten kesehatan Posyandu yang hangat dan suportif.
+
+Pasien: ${patient.name}
+Konteks: Pasien baru merespons pengingat ${label}.
+${detail}
+
+Balas dengan 1–2 kalimat yang natural dalam Bahasa Indonesia.
+${done
+  ? '- Berikan apresiasi yang tulus dan bervariasi. Hindari kalimat yang sama setiap hari.'
+  : '- Ingatkan dengan lembut dan suportif. Jelaskan singkat kenapa penting, jangan menghakimi.'
+}
+- Maksimal 1–2 emoji yang relevan.
+- Jangan pakai salam pembuka seperti "Halo" atau "Hai".`
+}
+
+/**
+ * Generate a warm, dynamic reply for fast-path YES/NO keyword responses.
+ * Falls back to null if the LLM call fails — caller should use template fallback.
+ */
+export async function generateQuickReply(patient, answer, category) {
+  try {
+    const response = await client.chat.completions.create({
+      model: MODEL,
+      messages: [
+        { role: 'system', content: buildQuickReplyContext(patient, answer, category) },
+        { role: 'user',   content: answer === 'YES' ? 'Sudah' : 'Belum' },
+      ],
+      temperature: 0.9,
+      max_tokens:  120,
+    })
+    return response.choices[0].message.content?.trim() ?? null
+  } catch (err) {
+    console.error('[AI] generateQuickReply failed:', err.message)
+    return null
+  }
+}
+
+// ─── Full agentic handler ─────────────────────────────────────────────────────
+
 export async function handleWithAI(patient, text) {
   // Retrieve relevant knowledge in parallel with no blocking — gracefully degrades to [] on error
   const knowledgeDocs = await retrieveRelevantKnowledge(text)
