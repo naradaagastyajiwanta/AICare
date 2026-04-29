@@ -61,6 +61,18 @@ export default function MoreSheet({ open, onClose }) {
               </button>
             </div>
 
+            {/* Watermark */}
+            <div className="px-5 pb-1">
+              <a
+                href="https://NAJWorks.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-surface-300 hover:text-primary-500 transition-colors font-medium tracking-wide"
+              >
+                Dibuat oleh NAJWorks.com
+              </a>
+            </div>
+
             {/* Grid */}
             <div className="px-5 pb-8 pt-2 grid grid-cols-3 gap-3 overflow-y-auto">
               {OVERFLOW_NAV.map(({ href, label, icon: Icon }) => {

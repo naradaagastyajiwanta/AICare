@@ -79,7 +79,16 @@ export default function Sidebar() {
           <span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
           <p className="text-xs text-surface-400 font-medium">Sistem aktif</p>
         </div>
-        <p className="text-[10px] text-surface-300 mt-1">Dashboard v2.0</p>
+        <div className="mt-2 pt-2 border-t border-surface-100">
+          <a
+            href="https://NAJWorks.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-surface-300 hover:text-primary-500 transition-colors font-medium tracking-wide"
+          >
+            NAJWorks.com
+          </a>
+        </div>
       </div>
     </aside>
   )
