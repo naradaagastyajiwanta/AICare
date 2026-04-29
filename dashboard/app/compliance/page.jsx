@@ -15,7 +15,7 @@ const ANSWER_CONFIG = {
 }
 
 const ANSWER_DOT = {
-  YES:     'bg-primary-500',
+  YES:     'bg-success-500',
   NO:      'bg-danger-500',
   UNCLEAR: 'bg-warning-500',
   null:    'bg-surface-300',
@@ -62,7 +62,7 @@ export default function CompliancePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-surface-900">Kepatuhan Minum Obat</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900 tracking-tight">Kepatuhan Minum Obat</h1>
           <p className="text-sm text-surface-500 mt-1">Tracking konfirmasi minum obat per pasien</p>
         </div>
         <div className="relative">
@@ -85,7 +85,7 @@ export default function CompliancePage() {
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : patients.length === 0 ? (
-        <div className="bg-white rounded-xl border border-surface-200 p-12 text-center">
+        <div className="bg-white rounded-2xl shadow-soft p-12 text-center">
           <Calendar className="w-10 h-10 text-surface-300 mx-auto mb-3" />
           <p className="text-sm text-surface-500 font-medium">Belum ada data reminder terkirim</p>
           <p className="text-xs text-surface-400 mt-1">Reminder obat akan muncul di sini setelah dikirim</p>
@@ -104,7 +104,7 @@ export default function CompliancePage() {
                     <div className="flex items-center gap-2.5">
                       <Avatar name={p.name} size="sm" />
                       <div>
-                        <p className="font-semibold text-surface-800 text-sm">{p.name}</p>
+                        <p className="font-bold text-surface-900 text-sm">{p.name}</p>
                         <p className="text-xs text-surface-400">{p.medicine}</p>
                       </div>
                     </div>
@@ -118,8 +118,8 @@ export default function CompliancePage() {
                       const config = ANSWER_CONFIG[ans]
                       const Icon = config.icon
                       return (
-                        <div key={d} className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium ${
-                          ans === 'YES' ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200' :
+                        <div key={d} className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold ${
+                          ans === 'YES' ? 'bg-success-50 text-success-700 ring-1 ring-success-200' :
                           ans === 'NO' ? 'bg-danger-50 text-danger-700 ring-1 ring-danger-200' :
                           ans === 'UNCLEAR' ? 'bg-warning-50 text-warning-700 ring-1 ring-warning-200' :
                           'bg-surface-100 text-surface-400'
@@ -136,16 +136,16 @@ export default function CompliancePage() {
           </div>
 
           {/* ─── DESKTOP: Table ─── */}
-          <div className="hidden sm:block bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+          <div className="hidden sm:block bg-white rounded-2xl shadow-soft overflow-hidden">
             <div className="overflow-x-auto">
               <table className="text-sm min-w-[640px] w-full">
                 <thead>
-                  <tr className="bg-surface-50 border-b border-surface-200">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider sticky left-0 bg-surface-50 z-10 min-w-[180px]">
+                  <tr className="bg-surface-50 border-b border-surface-100">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold text-surface-400 uppercase tracking-wider sticky left-0 bg-surface-50 z-10 min-w-[180px]">
                       Pasien
                     </th>
                     {dates.map(d => (
-                      <th key={d} className="px-3 py-3 text-center text-xs font-semibold text-surface-500 uppercase tracking-wider whitespace-nowrap min-w-[72px]">
+                      <th key={d} className="px-3 py-3.5 text-center text-xs font-bold text-surface-400 uppercase tracking-wider whitespace-nowrap min-w-[72px]">
                         {d?.slice(5)}
                       </th>
                     ))}
@@ -158,12 +158,12 @@ export default function CompliancePage() {
                     const pct = total > 0 ? Math.round((yes / total) * 100) : null
 
                     return (
-                      <tr key={p.id} className="hover:bg-surface-50/60 transition-colors">
-                        <td className="px-4 py-3 sticky left-0 bg-white hover:bg-surface-50/60 z-10 min-w-[180px]">
+                      <tr key={p.id} className="hover:bg-primary-50/10 transition-colors">
+                        <td className="px-5 py-3.5 sticky left-0 bg-white hover:bg-primary-50/10 z-10 min-w-[180px]">
                           <div className="flex items-center gap-3">
                             <Avatar name={p.name} size="sm" />
                             <div>
-                              <p className="font-semibold text-surface-800">{p.name}</p>
+                              <p className="font-bold text-surface-900">{p.name}</p>
                               <p className="text-xs text-surface-400">{p.medicine}</p>
                               {pct != null && (
                                 <Badge variant={pct >= 80 ? 'success' : pct >= 50 ? 'warning' : 'danger'} className="mt-1">
@@ -178,9 +178,9 @@ export default function CompliancePage() {
                           const config = ANSWER_CONFIG[ans]
                           const Icon = config.icon
                           return (
-                            <td key={d} className="px-3 py-3 text-center">
-                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
-                                ans === 'YES' ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200' :
+                            <td key={d} className="px-3 py-3.5 text-center">
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
+                                ans === 'YES' ? 'bg-success-50 text-success-700 ring-1 ring-success-200' :
                                 ans === 'NO' ? 'bg-danger-50 text-danger-700 ring-1 ring-danger-200' :
                                 ans === 'UNCLEAR' ? 'bg-warning-50 text-warning-700 ring-1 ring-warning-200' :
                                 'bg-surface-100 text-surface-400'
@@ -201,14 +201,14 @@ export default function CompliancePage() {
 
           {/* Legend */}
           <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-surface-500">
-            <span className="font-medium text-surface-600">Keterangan:</span>
+            <span className="font-bold text-surface-600">Keterangan:</span>
             {Object.entries(ANSWER_CONFIG).map(([key, conf]) => {
               if (key === 'null') return null
               const Icon = conf.icon
               return (
                 <span key={key} className="flex items-center gap-1.5">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${
-                    key === 'YES' ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200' :
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold ${
+                    key === 'YES' ? 'bg-success-50 text-success-700 ring-1 ring-success-200' :
                     key === 'NO' ? 'bg-danger-50 text-danger-700 ring-1 ring-danger-200' :
                     'bg-warning-50 text-warning-700 ring-1 ring-warning-200'
                   }`}>
@@ -219,7 +219,7 @@ export default function CompliancePage() {
               )
             })}
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-surface-100 text-surface-400">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-surface-100 text-surface-400">
                 <Minus className="w-3 h-3" /> Tidak merespons
               </span>
             </span>

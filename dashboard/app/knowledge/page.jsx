@@ -8,11 +8,11 @@ import { Brain, Plus, Search, X, Loader2, FileText, Trash2, Edit3, CheckSquare, 
 import { motion, AnimatePresence } from 'framer-motion'
 
 const CATEGORIES = {
-  penyakit:    { label: 'Penyakit',    color: 'bg-danger-50 text-danger-700 ring-danger-200', dot: '#ef4e3f' },
-  obat:        { label: 'Obat',        color: 'bg-info-50 text-info-700 ring-info-200', dot: '#3b82f6' },
-  gaya_hidup:  { label: 'Gaya Hidup',  color: 'bg-primary-50 text-primary-700 ring-primary-200', dot: '#16a34a' },
+  penyakit:    { label: 'Penyakit',    color: 'bg-danger-50 text-danger-700 ring-danger-200', dot: '#ef4444' },
+  obat:        { label: 'Obat',        color: 'bg-primary-50 text-primary-700 ring-primary-200', dot: '#3b82f6' },
+  gaya_hidup:  { label: 'Gaya Hidup',  color: 'bg-success-50 text-success-700 ring-success-200', dot: '#10b981' },
   posyandu:    { label: 'Posyandu',   color: 'bg-purple-50 text-purple-700 ring-purple-200', dot: '#9333ea' },
-  umum:        { label: 'Umum',        color: 'bg-surface-100 text-surface-700 ring-surface-200', dot: '#a3a39a' },
+  umum:        { label: 'Umum',        color: 'bg-surface-100 text-surface-700 ring-surface-200', dot: '#94a3b8' },
 }
 
 const EMPTY = { title: '', content: '', category: 'penyakit' }
@@ -30,7 +30,6 @@ export default function KnowledgePage() {
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const { addToast } = useToast()
 
-  // DOCX upload state
   const [docxModal,     setDocxModal]     = useState(false)
   const [docxParsing,   setDocxParsing]   = useState(false)
   const [docxChunks,    setDocxChunks]    = useState([])
@@ -116,7 +115,6 @@ export default function KnowledgePage() {
     }
   }
 
-  // DOCX upload flow
   async function handleDocxPick(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -169,14 +167,14 @@ export default function KnowledgePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-surface-900 flex items-center gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900 tracking-tight flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
               <Brain className="w-5 h-5 text-primary-600" />
             </div>
             Knowledge Base
           </h1>
           <p className="text-sm text-surface-500 mt-2">
-            Dokumen referensi AI — <span className="font-medium text-primary-600">{totalActive} aktif</span>
+            Dokumen referensi AI — <span className="font-bold text-primary-600">{totalActive} aktif</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -196,10 +194,10 @@ export default function KnowledgePage() {
       </div>
 
       {/* Info banner */}
-      <div className="bg-info-50 border border-info-200 rounded-xl px-4 py-3 mb-5 sm:mb-6 flex items-start gap-3">
-        <Brain className="w-4 h-4 text-info-600 mt-0.5 shrink-0" />
-        <div className="text-xs text-info-800">
-          <p className="font-semibold mb-0.5">Cara kerja RAG</p>
+      <div className="bg-primary-50 border border-primary-200 rounded-2xl px-4 py-3 mb-5 sm:mb-6 flex items-start gap-3">
+        <Brain className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+        <div className="text-xs text-primary-800">
+          <p className="font-bold mb-0.5">Cara kerja RAG</p>
           <p className="leading-relaxed">Saat pasien bertanya, AI mencari dokumen paling relevan menggunakan OpenAI Embeddings lalu menggunakannya sebagai referensi.</p>
         </div>
       </div>
@@ -211,9 +209,9 @@ export default function KnowledgePage() {
             const label = key === 'all' ? 'Semua' : CATEGORIES[key].label
             return (
               <button key={key} onClick={() => setFilter(key)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap ${
                   filter === key
-                    ? 'bg-surface-800 text-white border-surface-800 shadow-sm'
+                    ? 'bg-surface-800 text-white border-surface-800 shadow-soft'
                     : 'bg-white text-surface-600 border-surface-200 hover:border-surface-300'
                 }`}>
                 {label}
@@ -234,20 +232,20 @@ export default function KnowledgePage() {
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-32 bg-surface-100 rounded-xl animate-pulse" />
+            <div key={i} className="h-32 bg-surface-100 rounded-2xl animate-pulse" />
           ))}
         </div>
       )}
 
       {/* Empty */}
       {!loading && filtered.length === 0 && (
-        <div className="bg-white rounded-xl border border-surface-200 p-12 text-center">
+        <div className="bg-white rounded-2xl shadow-soft p-12 text-center">
           <Brain className="w-10 h-10 text-surface-300 mx-auto mb-3" />
           <p className="text-sm text-surface-500 font-medium">Belum ada dokumen di knowledge base</p>
           <div className="flex gap-3 justify-center mt-3">
-            <button onClick={() => docxRef.current?.click()} className="text-xs text-primary-600 hover:underline font-medium">Upload DOCX</button>
+            <button onClick={() => docxRef.current?.click()} className="text-xs text-primary-600 hover:underline font-bold">Upload DOCX</button>
             <span className="text-xs text-surface-300">atau</span>
-            <button onClick={openAdd} className="text-xs text-primary-600 hover:underline font-medium">Tambah manual</button>
+            <button onClick={openAdd} className="text-xs text-primary-600 hover:underline font-bold">Tambah manual</button>
           </div>
         </div>
       )}
@@ -256,18 +254,18 @@ export default function KnowledgePage() {
       {!loading && filtered.length > 0 && (
         <div className="sm:hidden space-y-3">
           {selected.size > 0 && (
-            <div className="flex items-center justify-between px-3 py-2.5 bg-primary-50 border border-primary-200 rounded-lg">
-              <span className="text-xs font-medium text-primary-700">
+            <div className="flex items-center justify-between px-3 py-2.5 bg-primary-50 border border-primary-200 rounded-xl">
+              <span className="text-xs font-bold text-primary-700">
                 <CheckSquare className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
                 {selected.size} dipilih
               </span>
               <div className="flex items-center gap-2">
                 <button onClick={() => setSelected(new Set())}
-                  className="text-xs text-primary-600 hover:text-primary-800 px-2 py-1 rounded hover:bg-primary-100 transition-colors">
+                  className="text-xs text-primary-600 hover:text-primary-800 px-2 py-1 rounded hover:bg-primary-100 transition-colors font-medium">
                   Batal
                 </button>
                 <button onClick={handleBulkDelete} disabled={bulkDeleting}
-                  className="flex items-center gap-1 text-xs text-white bg-danger-600 hover:bg-danger-700 disabled:opacity-60 px-2.5 py-1.5 rounded-lg transition-colors font-medium">
+                  className="flex items-center gap-1 text-xs text-white bg-danger-600 hover:bg-danger-700 disabled:opacity-60 px-2.5 py-1.5 rounded-xl transition-colors font-bold">
                   {bulkDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                   Hapus
                 </button>
@@ -288,8 +286,8 @@ export default function KnowledgePage() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="font-semibold text-surface-800 text-sm">{item.title}</p>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium ring-1 shrink-0 ${cat.color}`}>
+                      <p className="font-bold text-surface-900 text-sm">{item.title}</p>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold ring-1 shrink-0 ${cat.color}`}>
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: cat.dot }} />
                         {cat.label}
                       </span>
@@ -297,9 +295,9 @@ export default function KnowledgePage() {
                     <p className="text-xs text-surface-400 line-clamp-2 leading-relaxed mb-2">{item.content}</p>
                     <div className="flex items-center justify-between">
                       <button onClick={() => handleToggle(item.id)}
-                        className={`text-xs px-2 py-0.5 rounded-full ring-1 transition-colors ${
+                        className={`text-xs px-2 py-0.5 rounded-full ring-1 transition-colors font-semibold ${
                           item.is_active
-                            ? 'bg-primary-50 text-primary-700 ring-primary-200'
+                            ? 'bg-success-50 text-success-700 ring-success-200'
                             : 'bg-surface-100 text-surface-500 ring-surface-200'
                         }`}>
                         {item.is_active ? 'Aktif' : 'Nonaktif'}
@@ -325,21 +323,20 @@ export default function KnowledgePage() {
 
       {/* ─── DESKTOP: Table ─── */}
       {!loading && filtered.length > 0 && (
-        <div className="hidden sm:block bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
-          {/* Bulk action bar */}
+        <div className="hidden sm:block bg-white rounded-2xl shadow-soft overflow-hidden">
           {selected.size > 0 && (
-            <div className="flex items-center justify-between px-4 py-2.5 bg-primary-50 border-b border-primary-100">
-              <span className="text-xs font-medium text-primary-700">
+            <div className="flex items-center justify-between px-5 py-2.5 bg-primary-50 border-b border-primary-100">
+              <span className="text-xs font-bold text-primary-700">
                 <CheckSquare className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
                 {selected.size} dokumen dipilih
               </span>
               <div className="flex items-center gap-2">
                 <button onClick={() => setSelected(new Set())}
-                  className="text-xs text-primary-600 hover:text-primary-800 px-2 py-1 rounded hover:bg-primary-100 transition-colors">
+                  className="text-xs text-primary-600 hover:text-primary-800 px-2 py-1 rounded hover:bg-primary-100 transition-colors font-medium">
                   Batalkan pilihan
                 </button>
                 <button onClick={handleBulkDelete} disabled={bulkDeleting}
-                  className="flex items-center gap-1.5 text-xs text-white bg-danger-600 hover:bg-danger-700 disabled:opacity-60 px-3 py-1.5 rounded-lg transition-colors font-medium">
+                  className="flex items-center gap-1.5 text-xs text-white bg-danger-600 hover:bg-danger-700 disabled:opacity-60 px-3 py-1.5 rounded-xl transition-colors font-bold">
                   {bulkDeleting
                     ? <><Loader2 className="w-3 h-3 animate-spin" /> Menghapus...</>
                     : <><Trash2 className="w-3 h-3" /> Hapus {selected.size} dokumen</>}
@@ -351,8 +348,8 @@ export default function KnowledgePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[700px]">
             <thead>
-              <tr className="bg-surface-50 border-b border-surface-200">
-                <th className="px-4 py-3 w-10">
+              <tr className="bg-surface-50 border-b border-surface-100">
+                <th className="px-5 py-3.5 w-10">
                   <input
                     type="checkbox"
                     checked={filtered.length > 0 && selected.size === filtered.length}
@@ -361,10 +358,10 @@ export default function KnowledgePage() {
                     className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 cursor-pointer"
                   />
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider">Judul & Konten</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-28">Kategori</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-20">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wider w-24">Aksi</th>
+                <th className="text-left px-5 py-3.5 text-xs font-bold text-surface-400 uppercase tracking-wider">Judul & Konten</th>
+                <th className="text-left px-5 py-3.5 text-xs font-bold text-surface-400 uppercase tracking-wider w-28">Kategori</th>
+                <th className="text-left px-5 py-3.5 text-xs font-bold text-surface-400 uppercase tracking-wider w-20">Status</th>
+                <th className="text-right px-5 py-3.5 text-xs font-bold text-surface-400 uppercase tracking-wider w-24">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-100">
@@ -372,8 +369,8 @@ export default function KnowledgePage() {
                 const cat = CATEGORIES[item.category] || CATEGORIES.umum
                 const isSelected = selected.has(item.id)
                 return (
-                  <tr key={item.id} className={`group transition-colors ${isSelected ? 'bg-primary-50/50' : 'hover:bg-surface-50/60'} ${!item.is_active ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-3">
+                  <tr key={item.id} className={`group transition-colors ${isSelected ? 'bg-primary-50/50' : 'hover:bg-primary-50/10'} ${!item.is_active ? 'opacity-50' : ''}`}>
+                    <td className="px-5 py-3.5">
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -381,27 +378,27 @@ export default function KnowledgePage() {
                         className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 cursor-pointer"
                       />
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-surface-800 mb-0.5">{item.title}</p>
+                    <td className="px-5 py-3.5">
+                      <p className="font-bold text-surface-900 mb-0.5">{item.title}</p>
                       <p className="text-xs text-surface-400 line-clamp-2 leading-relaxed">{item.content}</p>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ring-1 ${cat.color}`}>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ring-1 ${cat.color}`}>
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: cat.dot }} />
                         {cat.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-3.5">
                       <button onClick={() => handleToggle(item.id)}
-                        className={`text-xs px-2 py-0.5 rounded-full ring-1 transition-colors ${
+                        className={`text-xs px-2 py-0.5 rounded-full ring-1 transition-colors font-semibold ${
                           item.is_active
-                            ? 'bg-primary-50 text-primary-700 ring-primary-200'
+                            ? 'bg-success-50 text-success-700 ring-success-200'
                             : 'bg-surface-100 text-surface-500 ring-surface-200'
                         }`}>
                         {item.is_active ? 'Aktif' : 'Nonaktif'}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => openEdit(item)}
                           className="p-1.5 text-surface-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
@@ -425,7 +422,7 @@ export default function KnowledgePage() {
       {/* DOCX Preview Modal */}
       <AnimatePresence>
         {docxModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -435,7 +432,7 @@ export default function KnowledgePage() {
             >
               <div className="px-4 sm:px-6 py-4 border-b border-surface-100 flex items-center justify-between shrink-0">
                 <div>
-                  <h2 className="text-base font-semibold text-surface-800">Preview: {docxName}</h2>
+                  <h2 className="text-base font-bold text-surface-800">Preview: {docxName}</h2>
                   <p className="text-xs text-surface-400 mt-0.5">{docxChunks.length} chunks ditemukan — pilih yang ingin disimpan</p>
                 </div>
                 <button onClick={() => { setDocxModal(false); setDocxResult(null) }}
@@ -446,10 +443,10 @@ export default function KnowledgePage() {
 
               {docxResult ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 gap-3">
-                  <div className="w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center">
-                    <CheckCircle2 className="w-7 h-7 text-primary-600" />
+                  <div className="w-14 h-14 rounded-full bg-success-50 flex items-center justify-center">
+                    <CheckCircle2 className="w-7 h-7 text-success-600" />
                   </div>
-                  <p className="text-base font-semibold text-surface-800">{docxResult.saved} dokumen berhasil disimpan</p>
+                  <p className="text-base font-bold text-surface-800">{docxResult.saved} dokumen berhasil disimpan</p>
                   {docxResult.failed > 0 && <p className="text-sm text-danger-500">{docxResult.failed} gagal</p>}
                   <button onClick={() => { setDocxModal(false); setDocxResult(null) }} className="btn-primary mt-2">
                     Tutup
@@ -459,7 +456,7 @@ export default function KnowledgePage() {
                 <>
                   <div className="px-4 sm:px-6 py-3 border-b border-surface-100 flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
                     <div className="flex items-center gap-2">
-                      <label className="text-xs font-medium text-surface-600">Kategori:</label>
+                      <label className="text-xs font-bold text-surface-600">Kategori:</label>
                       <select value={docxCategory} onChange={e => setDocxCategory(e.target.value)}
                         className="input text-xs py-1 w-32">
                         {Object.entries(CATEGORIES).map(([k, v]) => (
@@ -467,10 +464,10 @@ export default function KnowledgePage() {
                         ))}
                       </select>
                     </div>
-                    <div className="flex items-center gap-3 sm:ml-auto text-xs text-surface-500">
+                    <div className="flex items-center gap-3 sm:ml-auto text-xs text-surface-500 font-medium">
                       <button onClick={() => setDocxSelected(docxChunks.map((_, i) => i))} className="hover:text-primary-600">Pilih semua</button>
                       <button onClick={() => setDocxSelected([])} className="hover:text-danger-500">Hapus semua</button>
-                      <span className="text-primary-600 font-medium">{docxSelected.length} dipilih</span>
+                      <span className="text-primary-600 font-bold">{docxSelected.length} dipilih</span>
                     </div>
                   </div>
 
@@ -489,7 +486,7 @@ export default function KnowledgePage() {
                               {selected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-surface-700 mb-1 truncate">{chunk.title}</p>
+                              <p className="text-xs font-bold text-surface-700 mb-1 truncate">{chunk.title}</p>
                               <p className="text-xs text-surface-500 line-clamp-3 leading-relaxed">{chunk.content}</p>
                               <p className="text-xs text-surface-300 mt-1">{chunk.content.length} karakter</p>
                             </div>
@@ -520,7 +517,7 @@ export default function KnowledgePage() {
       {/* Add / Edit Modal */}
       <AnimatePresence>
         {modal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -530,7 +527,7 @@ export default function KnowledgePage() {
             >
               <div className="px-4 sm:px-6 py-4 border-b border-surface-100 flex items-center justify-between sticky top-0 bg-white z-10">
                 <div>
-                  <h2 className="text-base font-semibold text-surface-800">{modal === 'add' ? 'Tambah Dokumen' : 'Edit Dokumen'}</h2>
+                  <h2 className="text-base font-bold text-surface-800">{modal === 'add' ? 'Tambah Dokumen' : 'Edit Dokumen'}</h2>
                   <p className="text-xs text-surface-400 mt-0.5">Embedding digenerate otomatis via OpenAI</p>
                 </div>
                 <button onClick={() => setModal(false)} className="text-surface-400 hover:text-surface-600 transition-colors p-2 -mr-2">
@@ -540,7 +537,7 @@ export default function KnowledgePage() {
 
               <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-surface-600 mb-1">Kategori *</label>
+                  <label className="block text-xs font-bold text-surface-600 mb-1">Kategori *</label>
                   <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="input">
                     {Object.entries(CATEGORIES).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
@@ -548,19 +545,19 @@ export default function KnowledgePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-surface-600 mb-1">Judul *</label>
+                  <label className="block text-xs font-bold text-surface-600 mb-1">Judul *</label>
                   <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                     required placeholder="contoh: Cara Minum Obat Hipertensi" className="input" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-surface-600 mb-1">
+                  <label className="block text-xs font-bold text-surface-600 mb-1">
                     Konten * <span className="text-surface-400 font-normal">— satu topik per dokumen</span>
                   </label>
                   <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                     required rows={8}
                     placeholder={`Contoh:\nHipertensi adalah tekanan darah tinggi (≥140/90 mmHg). Gejala: sakit kepala, pusing. Penanganan: minum obat rutin, kurangi garam, olahraga, hindari stres.`}
                     className="input resize-none" />
-                  <p className="text-xs text-surface-400 mt-1">{form.content.length} karakter</p>
+                  <p className="text-xs text-surface-400 mt-1 font-medium">{form.content.length} karakter</p>
                 </div>
                 <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-1">
                   <button type="button" onClick={() => setModal(false)} className="btn-secondary w-full sm:w-auto">Batal</button>

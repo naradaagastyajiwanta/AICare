@@ -4,16 +4,14 @@ import { createContext, useContext, useState, useCallback } from 'react'
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 
-const ToastContext = createContext(null)
-
 const ICONS = {
-  success: <CheckCircle className="w-4 h-4 text-primary-600" />,
+  success: <CheckCircle className="w-4 h-4 text-success-600" />,
   error: <AlertCircle className="w-4 h-4 text-danger-600" />,
   info: <Info className="w-4 h-4 text-info-600" />,
 }
 
 const STYLES = {
-  success: 'border-primary-200 bg-primary-50',
+  success: 'border-success-200 bg-success-50',
   error: 'border-danger-200 bg-danger-50',
   info: 'border-info-200 bg-info-50',
 }
@@ -45,7 +43,7 @@ export function ToastProvider({ children }) {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className={`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-lg border shadow-md min-w-[280px] max-w-sm ${STYLES[t.type]}`}
+              className={`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-soft-md min-w-[280px] max-w-sm ${STYLES[t.type]}`}
             >
               {ICONS[t.type]}
               <span className="text-sm font-medium text-surface-800 flex-1">{t.message}</span>
@@ -62,6 +60,8 @@ export function ToastProvider({ children }) {
     </ToastContext.Provider>
   )
 }
+
+const ToastContext = createContext(null)
 
 export function useToast() {
   const ctx = useContext(ToastContext)

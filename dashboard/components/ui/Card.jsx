@@ -10,7 +10,7 @@ export default function Card({ children, className = '', hover = false, padding 
 
   return (
     <div
-      className={`bg-white rounded-xl border border-surface-200 shadow-sm ${paddings[padding]} ${hover ? 'transition-all duration-200 hover:shadow-md hover:-translate-y-0.5' : ''} ${className}`}
+      className={`bg-white rounded-2xl shadow-soft ${paddings[padding]} ${hover ? 'transition-all duration-300 hover:shadow-soft-md hover:-translate-y-0.5' : ''} ${className}`}
     >
       {children}
     </div>

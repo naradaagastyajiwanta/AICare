@@ -55,7 +55,7 @@ export default function BroadcastPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-xl sm:text-2xl font-bold text-surface-900 flex items-center gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold text-surface-900 tracking-tight flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
             <Megaphone className="w-5 h-5 text-primary-600" />
           </div>
@@ -67,39 +67,39 @@ export default function BroadcastPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Compose Form */}
         <Card padding="lg">
-          <h2 className="text-sm font-semibold text-surface-800 mb-5">Tulis Pesan</h2>
+          <h2 className="text-sm font-bold text-surface-800 mb-5">Tulis Pesan</h2>
 
           <form onSubmit={handleSend} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1.5">Judul (opsional)</label>
+              <label className="block text-xs font-bold text-surface-600 mb-1.5">Judul (opsional)</label>
               <input value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                 placeholder="contoh: Jadwal Posyandu Bulan Ini" className="input" />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1.5">Pesan *</label>
+              <label className="block text-xs font-bold text-surface-600 mb-1.5">Pesan *</label>
               <textarea value={form.message}
                 onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
                 rows={7} required placeholder="Tulis pesan broadcast di sini..."
                 className="input resize-none" />
-              <p className="text-xs text-surface-400 mt-1.5 text-right">{form.message.length} karakter</p>
+              <p className="text-xs text-surface-400 mt-1.5 text-right font-medium">{form.message.length} karakter</p>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 text-sm text-danger-700 bg-danger-50 rounded-lg px-3 py-2.5 border border-danger-200">
+              <div className="flex items-center gap-2 text-sm text-danger-700 bg-danger-50 rounded-xl px-3 py-2.5 border border-danger-200">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 {error}
               </div>
             )}
 
             {result && (
-              <div className="bg-primary-50 rounded-lg px-4 py-3 border border-primary-200">
+              <div className="bg-success-50 rounded-xl px-4 py-3 border border-success-200">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-primary-600" />
-                  <p className="text-sm font-semibold text-primary-800">Broadcast terkirim!</p>
+                  <CheckCircle2 className="w-4 h-4 text-success-600" />
+                  <p className="text-sm font-bold text-success-800">Broadcast terkirim!</p>
                 </div>
-                <p className="text-xs text-primary-600 mt-1">
+                <p className="text-xs text-success-600 mt-1 font-medium">
                   {result.sent} pasien berhasil dikirim
                   {result.failed > 0 && `, ${result.failed} gagal`}
                 </p>
@@ -115,15 +115,14 @@ export default function BroadcastPage() {
             </button>
           </form>
 
-          {/* Education templates */}
           {education.filter(m => m.is_active).length > 0 && (
             <div className="mt-6 pt-5 border-t border-surface-100">
-              <p className="text-xs font-medium text-surface-500 mb-3">Gunakan template materi edukasi:</p>
+              <p className="text-xs font-bold text-surface-500 mb-3">Gunakan template materi edukasi:</p>
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {education.filter(m => m.is_active).map(m => (
                   <button key={m.id} type="button" onClick={() => useTemplate(m)}
-                    className="w-full text-left px-3 py-2.5 rounded-lg border border-surface-200 hover:border-primary-300 hover:bg-primary-50/50 transition-colors">
-                    <p className="text-xs font-semibold text-surface-700 truncate">{m.title}</p>
+                    className="w-full text-left px-3 py-2.5 rounded-xl border border-surface-200 hover:border-primary-300 hover:bg-primary-50/50 transition-colors">
+                    <p className="text-xs font-bold text-surface-700 truncate">{m.title}</p>
                     <p className="text-xs text-surface-400 mt-0.5 line-clamp-1">{m.content}</p>
                   </button>
                 ))}
@@ -134,12 +133,12 @@ export default function BroadcastPage() {
 
         {/* Broadcast History */}
         <Card padding="lg">
-          <h2 className="text-sm font-semibold text-surface-800 mb-5">Riwayat Broadcast</h2>
+          <h2 className="text-sm font-bold text-surface-800 mb-5">Riwayat Broadcast</h2>
 
           {loadingHist ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-20 bg-surface-100 rounded-lg animate-pulse" />
+                <div key={i} className="h-20 bg-surface-100 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : history.length === 0 ? (
@@ -150,14 +149,14 @@ export default function BroadcastPage() {
           ) : (
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
               {history.map(b => (
-                <div key={b.id} className="border border-surface-100 rounded-lg p-3.5 hover:bg-surface-50/50 transition-colors">
+                <div key={b.id} className="bg-white rounded-xl border border-surface-100 p-3.5 hover:shadow-soft transition-shadow">
                   {b.title && (
-                    <p className="text-xs font-semibold text-surface-700 mb-1">{b.title}</p>
+                    <p className="text-xs font-bold text-surface-700 mb-1">{b.title}</p>
                   )}
                   <p className="text-sm text-surface-600 whitespace-pre-line line-clamp-3">{b.message}</p>
                   <div className="flex items-center justify-between mt-2.5 text-xs text-surface-400">
                     <Badge variant="outline">{b.recipient_count} penerima</Badge>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 font-medium">
                       <Clock className="w-3 h-3" />
                       {new Date(b.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>

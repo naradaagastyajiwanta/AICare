@@ -11,7 +11,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="id">
-      <body className="bg-surface-50 min-h-screen">
+      <body className="min-h-screen">
         <ToastProvider>
           {/* Mobile Header + Drawer */}
           <MobileNav />

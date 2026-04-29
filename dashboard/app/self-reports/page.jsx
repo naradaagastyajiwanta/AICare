@@ -6,12 +6,12 @@ import Avatar from '../../components/ui/Avatar'
 import Card from '../../components/ui/Card'
 import CircularProgress from '../../components/ui/CircularProgress'
 import { SkeletonCard } from '../../components/ui/Skeleton'
-import { Calendar, ChevronDown, Pill, Activity, Utensils, Star, ArrowRight } from 'lucide-react'
+import { Calendar, ChevronDown, Pill, Activity, Utensils, Star } from 'lucide-react'
 
 const SCORE_COLORS = {
-  green:  { color: '#16a34a', bg: '#f0fdf4' },
+  green:  { color: '#10b981', bg: '#ecfdf5' },
   yellow: { color: '#d97706', bg: '#fffbeb' },
-  red:    { color: '#dc3528', bg: '#fef2f0' },
+  red:    { color: '#ef4444', bg: '#fef2f2' },
 }
 
 function scoreClass(total) {
@@ -26,7 +26,7 @@ function ScoreGauge({ value, max = 100, label, color, size = 44 }) {
       <CircularProgress value={Math.round((value / max) * 100)} size={size} strokeWidth={4} color={color}>
         <span className="text-[10px] font-bold" style={{ color }}>{value}</span>
       </CircularProgress>
-      <span className="text-[10px] text-surface-500">{label}</span>
+      <span className="text-[10px] text-surface-400 font-medium">{label}</span>
     </div>
   )
 }
@@ -43,7 +43,6 @@ export default function SelfReportsPage() {
       .finally(() => setLoading(false))
   }, [days])
 
-  // Group by date
   const byDate = {}
   for (const row of data) {
     const d = row.score_date?.slice(0, 10)
@@ -57,7 +56,7 @@ export default function SelfReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-surface-900">Laporan Harian Pasien</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900 tracking-tight">Laporan Harian Pasien</h1>
           <p className="text-sm text-surface-500 mt-1">Skor kesehatan harian: obat, aktivitas, dan pola makan</p>
         </div>
         <div className="relative">
@@ -82,7 +81,7 @@ export default function SelfReportsPage() {
           <SkeletonCard />
         </div>
       ) : dates.length === 0 ? (
-        <div className="bg-white rounded-xl border border-surface-200 p-12 text-center">
+        <div className="bg-white rounded-2xl shadow-soft p-12 text-center">
           <Star className="w-10 h-10 text-surface-300 mx-auto mb-3" />
           <p className="text-sm text-surface-500 font-medium">Belum ada data laporan</p>
           <p className="text-xs text-surface-400 mt-1">Laporan akan muncul setelah pasien mulai merespons</p>
@@ -91,8 +90,8 @@ export default function SelfReportsPage() {
         <div className="space-y-5">
           {dates.map(date => (
             <Card key={date} padding="none" className="overflow-hidden">
-              <div className="px-4 sm:px-5 py-3.5 bg-surface-50 border-b border-surface-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-surface-800">
+              <div className="px-5 py-3.5 bg-surface-50 border-b border-surface-100 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-surface-800">
                   {new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </h2>
                 <Badge variant="outline">{byDate[date].length} pasien</Badge>
@@ -103,41 +102,38 @@ export default function SelfReportsPage() {
                   const theme = SCORE_COLORS[scoreClass(row.total_score)]
                   return (
                     <div key={row.id} className="px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-surface-50/40 transition-colors">
-                      {/* Patient Info */}
                       <div className="flex items-center gap-3 min-w-[180px]">
                         <Avatar name={row.patient_name} size="md" />
                         <div>
-                          <p className="text-sm font-semibold text-surface-800">{row.patient_name}</p>
+                          <p className="text-sm font-bold text-surface-900">{row.patient_name}</p>
                           <p className="text-xs text-surface-400">Total skor</p>
                         </div>
                       </div>
 
-                      {/* Score Gauges */}
                       <div className="flex items-center gap-5 flex-1">
                         <ScoreGauge
                           value={row.medication_score}
                           max={100}
                           label="Obat"
-                          color={row.medication_score >= 100 ? '#16a34a' : '#a3a39a'}
+                          color={row.medication_score >= 100 ? '#10b981' : '#94a3b8'}
                           size={40}
                         />
                         <ScoreGauge
                           value={row.activity_score}
                           max={100}
                           label="Aktivitas"
-                          color={row.activity_score >= 100 ? '#f59e0b' : row.activity_score >= 50 ? '#d97706' : '#a3a39a'}
+                          color={row.activity_score >= 100 ? '#f59e0b' : row.activity_score >= 50 ? '#d97706' : '#94a3b8'}
                           size={40}
                         />
                         <ScoreGauge
                           value={row.diet_score}
                           max={100}
                           label="Makan"
-                          color={row.diet_score >= 100 ? '#0ea5e9' : '#a3a39a'}
+                          color={row.diet_score >= 100 ? '#3b82f6' : '#94a3b8'}
                           size={40}
                         />
                       </div>
 
-                      {/* Total Score & Status */}
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <div className="flex items-center gap-2 justify-end">
@@ -155,8 +151,8 @@ export default function SelfReportsPage() {
                         </div>
 
                         {row.all_positive ? (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 text-primary-700 text-xs font-semibold ring-1 ring-primary-200">
-                            <Star className="w-3.5 h-3.5 fill-primary-500 text-primary-500" />
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-50 text-success-700 text-xs font-bold ring-1 ring-success-200">
+                            <Star className="w-3.5 h-3.5 fill-success-500 text-success-500" />
                             Luar Biasa
                           </div>
                         ) : (

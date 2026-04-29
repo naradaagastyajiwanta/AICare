@@ -4,7 +4,7 @@ export default function CircularProgress({
   value,
   size = 48,
   strokeWidth = 4,
-  color = 'var(--primary-600)',
+  color = 'var(--primary-500)',
   trackColor = 'var(--surface-200)',
   children,
 }) {
