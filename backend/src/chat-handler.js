@@ -120,10 +120,23 @@ export async function handleChatMessage(phone, text, waService) {
       const category   = recentReminder.rows[0]?.category ?? 'medication'
       const reminderId = recentReminder.rows[0]?.id ?? null
 
-      await db.query(
-        'INSERT INTO responses (patient_id, reminder_id, answer, raw_message, response_type) VALUES ($1, $2, $3, $4, $5)',
-        [patientId, reminderId, answer, text, category]
-      )
+      if (category === 'diet') {
+        await db.query(
+          'INSERT INTO responses (patient_id, reminder_id, answer, ate_healthy, raw_message, response_type) VALUES ($1, $2, $3, $4, $5, $6)',
+          [patientId, reminderId, answer, answer === 'YES', text, 'diet']
+        )
+      } else if (category === 'activity') {
+        // Fast-path only knows YES/NO — default 1 session for YES; AI path handles precise counts
+        await db.query(
+          'INSERT INTO responses (patient_id, reminder_id, answer, activity_count, raw_message, response_type) VALUES ($1, $2, $3, $4, $5, $6)',
+          [patientId, reminderId, answer, answer === 'YES' ? 1 : 0, text, 'activity']
+        )
+      } else {
+        await db.query(
+          'INSERT INTO responses (patient_id, reminder_id, answer, raw_message, response_type) VALUES ($1, $2, $3, $4, $5)',
+          [patientId, reminderId, answer, text, 'medication']
+        )
+      }
       console.log(`[CHAT] ${category} response recorded: ${answer} for patient ${patientId}`)
 
       await upsertDailyScore(patientId)
