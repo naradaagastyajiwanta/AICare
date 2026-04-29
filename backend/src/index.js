@@ -77,7 +77,7 @@ app.listen(PORT, () => {
   startCronJobs(waService)
 
   // Debounce: accumulate rapid messages from the same user, process as one
-  const DEBOUNCE_MS = 1500
+  const DEBOUNCE_MS = 5000
   const pending = new Map() // phone → { timer, texts[], jid }
 
   waService.on('message', ({ phone, text, jid }) => {
