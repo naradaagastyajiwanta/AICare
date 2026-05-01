@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
 import StatsCard from '../components/StatsCard'
 import Badge from '../components/ui/Badge'
@@ -35,6 +36,7 @@ const CATEGORY_ICONS = {
 }
 
 export default function OverviewPage() {
+  const router = useRouter()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -128,7 +130,7 @@ export default function OverviewPage() {
               {pending} pasien telah dikirimi reminder obat tapi belum mengonfirmasi.
             </p>
           </div>
-          <button className="btn-primary text-xs py-2 px-3 shrink-0 w-full sm:w-auto">
+          <button className="btn-primary text-xs py-2 px-3 shrink-0 w-full sm:w-auto" onClick={() => router.push('/compliance')}>
             Lihat Detail
           </button>
         </div>

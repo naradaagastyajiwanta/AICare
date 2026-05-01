@@ -1,6 +1,56 @@
 import { CronJob } from 'cron'
 import { db } from '../db/index.js'
 
+// ── Anti-ban helpers ────────────────────────────────────────────────────────
+
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+// Layer 1: Random inter-message delay (10–25 s) — mimics human pacing
+function randomDelay() {
+  return Math.floor(Math.random() * 15_000) + 10_000
+}
+
+// Layer 2: Deterministic per-patient daily send offset (0–4 min).
+// Same patient+slot always gets the same offset on the same day, spreading
+// all patients with identical reminder_time across a 4-minute window instead
+// of sending them all at once.
+function dailyOffsetMinutes(patientId, slotId, dateStr) {
+  const dateNum = parseInt(dateStr.replace(/-/g, ''), 10)
+  return Math.abs((patientId * 2654435761 + slotId * 40503) ^ (dateNum & 0xFFFFFF)) % 5
+}
+
+// Layer 3: Global token-bucket rate limiter — max 5 WA sends per 60 s.
+// Shared across all cron jobs so concurrent job ticks don't bypass the limit.
+// JavaScript's single-threaded event loop makes count++ atomic in practice.
+class RateLimiter {
+  constructor(maxPerMinute) {
+    this.max = maxPerMinute
+    this.count = 0
+    this.windowStart = Date.now()
+  }
+
+  async wait() {
+    const now = Date.now()
+    if (now - this.windowStart >= 60_000) {
+      this.count = 0
+      this.windowStart = now
+    }
+    if (this.count >= this.max) {
+      const waitMs = 60_000 - (now - this.windowStart) + 500
+      console.log(`[RATE] WA rate limit (${this.max}/min) reached — waiting ${Math.round(waitMs / 1000)}s`)
+      await sleep(waitMs)
+      this.count = 0
+      this.windowStart = Date.now()
+    }
+    this.count++
+  }
+}
+
+// Single shared limiter — all jobs (reminder, guardian, motivation) share quota
+const waRateLimiter = new RateLimiter(5)
+
+// ── Phone helpers ───────────────────────────────────────────────────────────
+
 // Normalize to E.164-style digits: strip non-digits, leading 0 → 62 (Indonesia).
 // International patients should enter their number with country code (no leading 0).
 function normalizePhone(phone) {
@@ -12,6 +62,8 @@ function normalizePhone(phone) {
 function phoneToJid(phone) {
   return `${normalizePhone(phone)}@s.whatsapp.net`
 }
+
+// ── Message formatters ──────────────────────────────────────────────────────
 
 function formatReminderMessage(patient, label, category) {
   const timeLabel = label ? ` (${label})` : ''
@@ -31,6 +83,8 @@ function formatGuardianMessage(patient) {
   return `Halo, ini notifikasi dari Posyandu.\n\n*${patient.name}* belum mengonfirmasi minum obat *${patient.medicine_name}* hari ini. Mohon ditindaklanjuti.\n\nTerima kasih!`
 }
 
+// ── Time utilities ──────────────────────────────────────────────────────────
+
 // Returns the current time in the given IANA timezone as a plain Date object
 // whose .getHours()/.getMinutes() reflect that local time.
 function getLocalTime(timezone) {
@@ -48,11 +102,13 @@ function timeToMinutes(timeStr) {
   return h * 60 + m
 }
 
+// ── Cron jobs ───────────────────────────────────────────────────────────────
+
 export function startCronJobs(waService) {
-  // ── Dynamic Reminder: every minute ────────────────────────────────────────────
+  // ── Dynamic Reminder: every minute ────────────────────────────────────────
   // Each patient's reminder_time is interpreted in THEIR timezone (p.timezone).
-  // The NOT EXISTS check uses p.timezone so scheduled_date comparisons are correct
-  // even for WITA/WIT patients near midnight.
+  // Anti-ban: Layer 2 offsets spread patients with the same reminder_time across
+  // up to 4 extra minutes. The window is extended to 10 min to accommodate this.
   const reminderJob = new CronJob(
     '* * * * *',
     async () => {
@@ -87,18 +143,19 @@ export function startCronJobs(waService) {
 
         for (const slot of result.rows) {
           const tz = slot.timezone || 'Asia/Jakarta'
-          const localNow      = getLocalTime(tz)
+          const localNow       = getLocalTime(tz)
           const currentMinutes = localNow.getHours() * 60 + localNow.getMinutes()
           const slotMinutes    = timeToMinutes(slot.reminder_time)
 
-          // Skip if the slot time hasn't arrived yet in the patient's local timezone
-          if (slotMinutes > currentMinutes) continue
-          // Only fire within a 5-minute window — prevents retroactive bulk-sending
-          // if the backend restarts briefly
-          if (currentMinutes - slotMinutes > 5) continue
+          // Layer 2: per-patient daily offset (0–4 min) spreads concurrent sends
+          const localDateStr     = getLocalDateStr(tz)
+          const offsetMinutes    = dailyOffsetMinutes(slot.patient_id, slot.reminder_slot_id, localDateStr)
+          const effectiveMinutes = slotMinutes + offsetMinutes
 
-          // Patient's local date string (YYYY-MM-DD) for scheduled_date storage
-          const localDateStr = getLocalDateStr(tz)
+          // Skip if effective send time hasn't arrived yet in the patient's timezone
+          if (effectiveMinutes > currentMinutes) continue
+          // Extended window (10 min) gives rate limiter room to spread sends
+          if (currentMinutes - effectiveMinutes > 10) continue
 
           // Atomic claim: INSERT 'sending'. On conflict, only update if the
           // existing row is 'failed' (allows retry). If 'sending'/'sent',
@@ -115,15 +172,21 @@ export function startCronJobs(waService) {
           if (claim.rowCount === 0) continue  // already claimed or confirmed by another tick
 
           try {
+            // Layer 3: enforce global rate limit before sending
+            await waRateLimiter.wait()
+
             const jid = phoneToJid(slot.phone)
             const message = formatReminderMessage(slot, slot.label, slot.category)
             await waService.sendMessage(jid, message)
-            console.log(`[CRON] Reminder sent → ${slot.name} (${tz}) at ${slot.reminder_time} [${slot.category}]`)
+            console.log(`[CRON] Reminder sent → ${slot.name} (${tz}) offset+${offsetMinutes}min [${slot.category}]`)
 
             await db.query(`
               UPDATE reminders SET sent_at = NOW(), status = 'sent'
               WHERE patient_id = $1 AND scheduled_date = $2::date AND reminder_slot_id = $3
             `, [slot.patient_id, localDateStr, slot.reminder_slot_id])
+
+            // Layer 1: random delay after each successful send
+            await sleep(randomDelay())
           } catch (err) {
             console.error(`[CRON] Failed to remind ${slot.name}:`, err.message)
             await db.query(`
@@ -141,7 +204,7 @@ export function startCronJobs(waService) {
     'Asia/Jakarta'
   )
 
-  // ── Guardian Notification: every 30 min, 08:00–21:00 Jakarta ─────────────────
+  // ── Guardian Notification: every 30 min, 08:00–21:00 Jakarta ──────────────
   // Operational window stays in Jakarta time (system-level decision).
   // "Today" checks use p.timezone per patient for correctness.
   const guardianJob = new CronJob(
@@ -182,6 +245,9 @@ export function startCronJobs(waService) {
 
         for (const patient of result.rows) {
           try {
+            // Layer 3 + Layer 1: rate limit then delay
+            await waRateLimiter.wait()
+
             const jid = phoneToJid(patient.guardian_phone)
             const message = formatGuardianMessage(patient)
             await waService.sendMessage(jid, message)
@@ -194,6 +260,8 @@ export function startCronJobs(waService) {
                 AND scheduled_date = (NOW() AT TIME ZONE $2)::date
                 AND category = 'medication'
             `, [patient.id, patient.timezone || 'Asia/Jakarta'])
+
+            await sleep(randomDelay())
           } catch (err) {
             console.error(`[CRON] Failed to notify guardian for ${patient.name}:`, err.message)
           }
@@ -207,7 +275,7 @@ export function startCronJobs(waService) {
     'Asia/Jakarta'
   )
 
-  // ── Motivation Message: every 5 minutes ───────────────────────────────────────
+  // ── Motivation Message: every 5 minutes ───────────────────────────────────
   const motivationJob = new CronJob(
     '*/5 * * * *',
     async () => {
@@ -234,10 +302,15 @@ export function startCronJobs(waService) {
           if (claimed.rowCount === 0) continue
 
           try {
+            // Layer 3 + Layer 1: rate limit then delay
+            await waRateLimiter.wait()
+
             const jid = phoneToJid(patient.phone)
             const message = `Luar biasa ${patient.name}! 🎉🌟\n\nKamu sudah menyelesaikan semua target kesehatan hari ini:\n✅ Minum obat\n✅ Aktivitas fisik\n✅ Makan bergizi\n\nKonsistensi seperti ini yang membuat kamu semakin sehat. Pertahankan terus ya! 💪`
             await waService.sendMessage(jid, message)
             console.log(`[CRON] Motivation message sent to ${patient.name}`)
+
+            await sleep(randomDelay())
           } catch (err) {
             console.error(`[CRON] Failed to send motivation to ${patient.name}:`, err.message)
             // Roll back the claim so it retries next tick
@@ -253,7 +326,7 @@ export function startCronJobs(waService) {
     'Asia/Jakarta'
   )
 
-  console.log('[CRON] Reminder scheduled (every minute, per-patient timezone)')
+  console.log('[CRON] Reminder scheduled (every minute, per-patient timezone, anti-ban: offset+delay+rate-limit)')
   console.log('[CRON] Guardian notification scheduled (every 30 min, 08:00-21:00, medication-only)')
   console.log('[CRON] Motivation message scheduled (every 5 min)')
 }
