@@ -218,6 +218,7 @@ class WhatsAppService extends EventEmitter {
       })
 
       this.sock.ev.on('messages.upsert', async ({ messages, type }) => {
+        console.log(`[WA] messages.upsert type=${type} count=${messages.length}`)
         if (type !== 'notify') return
         for (const msg of messages) {
           if (msg.key.fromMe) continue
@@ -228,6 +229,7 @@ class WhatsAppService extends EventEmitter {
           const text = msg.message?.conversation
             ?? msg.message?.extendedTextMessage?.text
             ?? null
+          console.log(`[WA] Incoming from ${phone} type=${type} hasText=${!!text}`)
           if (!text) continue
 
           // Mark message as read (blue double tick)
