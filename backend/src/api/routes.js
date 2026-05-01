@@ -817,5 +817,10 @@ router.post('/wa/restart', async (_req, res) => {
   res.json({ ok: true })
 })
 
+// Clear session files and reconnect — always shows a fresh QR
+router.post('/wa/logout', async (_req, res) => {
+  await waService.logout()
+  res.json({ ok: true })
+})
 
 export default router

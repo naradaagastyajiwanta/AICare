@@ -18,6 +18,9 @@ class WhatsAppService extends EventEmitter {
     this._clients = new Set()
     this._reconnectAttempts = 0
     this._maxReconnectAttempts = 10
+    this._connecting = false       // guard against concurrent connect() calls
+    this._heartbeatTimer = null
+    this._reconnectTimer = null    // track pending reconnect so we can cancel it
   }
 
   get state() {
@@ -72,9 +75,47 @@ class WhatsAppService extends EventEmitter {
     }
   }
 
+  _clearSession() {
+    try {
+      if (fs.existsSync(SESSION_DIR)) {
+        for (const f of fs.readdirSync(SESSION_DIR)) {
+          fs.rmSync(path.join(SESSION_DIR, f), { recursive: true, force: true })
+        }
+        console.log('[WA] Session files cleared')
+      }
+    } catch (err) {
+      console.error('[WA] Failed to clear session:', err.message)
+    }
+  }
+
+  _cancelPendingReconnect() {
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer)
+      this._reconnectTimer = null
+    }
+  }
+
+  _scheduleReconnect(delayMs) {
+    this._cancelPendingReconnect()
+    this._reconnectTimer = setTimeout(() => {
+      this._reconnectTimer = null
+      this.connect()
+    }, delayMs)
+  }
+
   async connect() {
+    // Prevent concurrent connect() calls during async setup
+    if (this._connecting) {
+      console.log('[WA] Connect already in progress, skipping')
+      return
+    }
+    this._connecting = true
+
+    // Tear down any existing socket cleanly — remove listeners first to
+    // prevent stale connection.update events from firing during ws.close()
     if (this.sock) {
       this.sock.ev.removeAllListeners()
+      try { await this.sock.ws.close() } catch {}
       this.sock = null
     }
 
@@ -88,11 +129,13 @@ class WhatsAppService extends EventEmitter {
       this.sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: true,
+        printQRInTerminal: false,
         syncFullHistory: false,
         markOnlineOnConnect: false,
-        keepAliveIntervalMs: 30000,
-        defaultQueryTimeoutMs: 60000,
+        keepAliveIntervalMs: 15_000,      // ping every 15s — keeps NAT alive and detects drops faster
+        connectTimeoutMs: 30_000,
+        defaultQueryTimeoutMs: 60_000,
+        retryRequestDelayMs: 500,
         logger: {
           level: 'silent',
           trace() {}, debug() {}, info() {},
@@ -101,6 +144,9 @@ class WhatsAppService extends EventEmitter {
           fatal() {}, child() { return this }
         },
       })
+
+      // Mark as no longer in initial setup — events can now drive reconnection
+      this._connecting = false
 
       this.sock.ev.on('creds.update', saveCreds)
 
@@ -120,23 +166,53 @@ class WhatsAppService extends EventEmitter {
         }
 
         if (connection === 'close') {
-          const shouldReconnect = (lastDisconnect?.error instanceof Boom)
-            ? lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut
-            : true
+          const code = (lastDisconnect?.error instanceof Boom)
+            ? lastDisconnect.error.output?.statusCode
+            : lastDisconnect?.error?.output?.statusCode
 
-          const code = lastDisconnect?.error?.output?.statusCode
-          console.log(`[WA] Disconnected, code: ${code}, reconnect: ${shouldReconnect}, attempts: ${this._reconnectAttempts}`)
+          const isLoggedOut  = code === DisconnectReason.loggedOut
+          const isBadSession = code === DisconnectReason.badSession
+          const isReplaced   = code === DisconnectReason.connectionReplaced
+          const isForbidden  = code === DisconnectReason.forbidden
 
+          console.log(`[WA] Disconnected, code: ${code}, attempts: ${this._reconnectAttempts}`)
+
+          if (isLoggedOut || isBadSession) {
+            // Session invalidated — clear saved creds so next connect shows a fresh QR
+            this._clearSession()
+            this._reconnectAttempts = 0
+            this._setState('disconnected')
+            console.log('[WA] Session cleared. Reconnecting for fresh QR...')
+            this._scheduleReconnect(2000)
+            return
+          }
+
+          if (isReplaced) {
+            // Another device opened the same WhatsApp session — don't auto-reconnect,
+            // user must manually restart to avoid a reconnect loop between two processes.
+            this._setState('disconnected')
+            console.log('[WA] Connection replaced by another device. Use the restart button to reconnect.')
+            return
+          }
+
+          if (isForbidden) {
+            // Number banned or restricted by WhatsApp
+            this._setState('stopped')
+            console.log('[WA] Account forbidden (banned/restricted). Manual intervention required.')
+            return
+          }
+
+          // Transient disconnect — exponential backoff
           this._setState('disconnected')
 
-          if (shouldReconnect && this._reconnectAttempts < this._maxReconnectAttempts) {
+          if (this._reconnectAttempts < this._maxReconnectAttempts) {
             this._reconnectAttempts++
-            const delay = Math.min(this._reconnectAttempts * 2000, 15000)
-            console.log(`[WA] Reconnecting in ${delay}ms...`)
-            setTimeout(() => this.connect(), delay)
-          } else if (this._reconnectAttempts >= this._maxReconnectAttempts) {
+            const delay = Math.min(this._reconnectAttempts * 2000, 15_000)
+            console.log(`[WA] Reconnecting in ${delay}ms (attempt ${this._reconnectAttempts}/${this._maxReconnectAttempts})...`)
+            this._scheduleReconnect(delay)
+          } else {
             console.log('[WA] Max reconnect attempts reached. Manual restart required.')
-            this._setState('qr', null)
+            this._setState('stopped')
           }
         }
       })
@@ -145,6 +221,8 @@ class WhatsAppService extends EventEmitter {
         if (type !== 'notify') return
         for (const msg of messages) {
           if (msg.key.fromMe) continue
+          // Ignore group chats — only handle individual (private) messages
+          if (msg.key.remoteJid?.endsWith('@g.us')) continue
           const phone = msg.key.remoteJid?.replace('@s.whatsapp.net', '').replace('@c.us', '')
           if (!phone) continue
           const text = msg.message?.conversation
@@ -160,9 +238,21 @@ class WhatsAppService extends EventEmitter {
           this.emit('message', { phone, text, jid: msg.key.remoteJid })
         }
       })
+
     } catch (err) {
+      this._connecting = false
       console.error('[WA] Connection error:', err.message)
-      this._setState('disconnected')
+
+      // Retry with backoff instead of giving up permanently
+      if (this._reconnectAttempts < this._maxReconnectAttempts) {
+        this._reconnectAttempts++
+        const delay = Math.min(this._reconnectAttempts * 2000, 15_000)
+        this._setState('disconnected')
+        console.log(`[WA] Retrying after error in ${delay}ms (attempt ${this._reconnectAttempts}/${this._maxReconnectAttempts})...`)
+        this._scheduleReconnect(delay)
+      } else {
+        this._setState('stopped')
+      }
     }
   }
 
@@ -188,18 +278,32 @@ class WhatsAppService extends EventEmitter {
   }
 
   async disconnect() {
+    this._cancelPendingReconnect()
     if (this.sock) {
-      try { await this.sock.ws.close() } catch {}
+      // Remove listeners first so no stale events fire during ws.close()
       this.sock.ev.removeAllListeners()
+      try { await this.sock.ws.close() } catch {}
       this.sock = null
     }
+    this._connecting = false
     this._setState('disconnected')
   }
 
+  // Normal reconnect — preserves existing session (no QR if session still valid)
   async reconnect() {
     this._reconnectAttempts = 0
+    this._setState('starting')
     await this.disconnect()
-    setTimeout(() => this.connect(), 1000)
+    this._scheduleReconnect(1000)
+  }
+
+  // Force a fresh QR by clearing session files before reconnecting
+  async logout() {
+    this._reconnectAttempts = 0
+    this._setState('starting')
+    await this.disconnect()
+    this._clearSession()
+    this._scheduleReconnect(500)
   }
 }
 

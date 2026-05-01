@@ -4,37 +4,52 @@ import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import {
   MessageCircle, RefreshCw, QrCode, CheckCircle2,
-  WifiOff, Loader2, Smartphone,
+  WifiOff, Loader2, Smartphone, LogOut,
 } from 'lucide-react'
 
 const STATUS_CONFIG = {
-  unknown:      { text: 'Memeriksa...',         color: 'gray',   icon: Loader2,      spin: true },
-  starting:     { text: 'Menghubungkan...',      color: 'warning', icon: Loader2,      spin: true },
+  unknown:      { text: 'Memeriksa...',         color: 'gray',    icon: Loader2,      spin: true  },
+  starting:     { text: 'Menghubungkan...',      color: 'warning', icon: Loader2,      spin: true  },
   qr:           { text: 'Menunggu scan QR',      color: 'primary', icon: QrCode,       spin: false },
   connected:    { text: 'Terhubung',             color: 'success', icon: CheckCircle2, spin: false },
-  disconnected: { text: 'Terputus',              color: 'danger', icon: WifiOff,      spin: false },
-  stopped:      { text: 'Tidak berjalan',        color: 'danger', icon: WifiOff,      spin: false },
-  error:        { text: 'Error',                 color: 'danger', icon: WifiOff,      spin: false },
+  disconnected: { text: 'Terputus',              color: 'danger',  icon: WifiOff,      spin: false },
+  stopped:      { text: 'Tidak berjalan',        color: 'danger',  icon: WifiOff,      spin: false },
+  error:        { text: 'Error',                 color: 'danger',  icon: WifiOff,      spin: false },
 }
 
 export default function WhatsAppPage() {
   const [state, setState] = useState({ status: 'unknown', qrDataUrl: null })
   const [restarting, setRestarting] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const [startingTimeout, setStartingTimeout] = useState(false)
 
   useEffect(() => {
-    const es = new EventSource('/api/wa/events')
-    es.onmessage = (e) => {
-      try { setState(JSON.parse(e.data)) } catch {}
+    let es
+    let closed = false
+
+    function connect() {
+      if (closed) return
+      es = new EventSource('/api/wa/events')
+      es.onmessage = (e) => {
+        try { setState(JSON.parse(e.data)) } catch {}
+      }
+      es.onerror = () => {
+        setState(s => ({
+          ...s,
+          status: s.status === 'connected' ? 'disconnected' : s.status === 'starting' ? 'starting' : 'error',
+        }))
+        // EventSource auto-reconnects — no manual retry needed
+      }
     }
-    es.onerror = () => setState(s => ({
-      ...s,
-      status: s.status === 'connected' ? 'disconnected' : 'error',
-    }))
-    return () => es.close()
+
+    connect()
+    return () => {
+      closed = true
+      es?.close()
+    }
   }, [])
 
-  // If stuck in starting/unknown for >20s, surface the restart button
+  // Surface the restart button if stuck in starting/unknown for >20s
   useEffect(() => {
     if (state.status !== 'starting' && state.status !== 'unknown') {
       setStartingTimeout(false)
@@ -46,13 +61,25 @@ export default function WhatsAppPage() {
 
   const handleRestart = async () => {
     setRestarting(true)
+    setStartingTimeout(false)
+    setState(s => ({ ...s, status: 'starting', qrDataUrl: null }))
     await fetch('/api/wa/restart', { method: 'POST' }).catch(() => {})
+    // Backend will broadcast real status via SSE; clear spinner after a safe window
     setTimeout(() => setRestarting(false), 3000)
+  }
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    setStartingTimeout(false)
+    setState({ status: 'starting', qrDataUrl: null })
+    await fetch('/api/wa/logout', { method: 'POST' }).catch(() => {})
+    setTimeout(() => setLoggingOut(false), 3000)
   }
 
   const { status, qrDataUrl } = state
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.unknown
   const StatusIcon = config.icon
+  const busy = restarting || loggingOut
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-xl mx-auto">
@@ -76,6 +103,7 @@ export default function WhatsAppPage() {
             pulse={config.spin || status === 'qr'}
             className="capitalize"
           >
+            <StatusIcon className={`w-3.5 h-3.5 mr-1 ${config.spin ? 'animate-spin' : ''}`} />
             {config.text}
           </Badge>
         </div>
@@ -120,7 +148,7 @@ export default function WhatsAppPage() {
               <p className="text-xs text-warning-600 font-medium">
                 {startingTimeout
                   ? 'Butuh waktu lebih lama — klik tombol di bawah untuk coba lagi.'
-                  : 'Menunggu QR code dari server, ini bisa 10–30 detik.'}
+                  : 'Menunggu respons dari server, ini bisa 10–30 detik.'}
               </p>
             </div>
           </div>
@@ -137,10 +165,11 @@ export default function WhatsAppPage() {
         )}
       </Card>
 
+      {/* Primary: reconnect with existing session */}
       <button
         onClick={handleRestart}
-        disabled={restarting}
-        className="w-full btn-primary py-3"
+        disabled={busy}
+        className="w-full btn-primary py-3 mb-3"
       >
         {restarting ? (
           <>
@@ -150,13 +179,33 @@ export default function WhatsAppPage() {
         ) : (
           <>
             <RefreshCw className="w-4 h-4" />
-            Hubungkan Ulang / Tampilkan QR Baru
+            Hubungkan Ulang
+          </>
+        )}
+      </button>
+
+      {/* Secondary: clear session → always shows fresh QR */}
+      <button
+        onClick={handleLogout}
+        disabled={busy}
+        className="w-full btn-secondary py-3"
+      >
+        {loggingOut ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Menghapus sesi...
+          </>
+        ) : (
+          <>
+            <LogOut className="w-4 h-4" />
+            Hapus Sesi &amp; Tampilkan QR Baru
           </>
         )}
       </button>
 
       <p className="text-xs text-surface-400 text-center mt-4 font-medium">
-        Tombol ini akan merestart koneksi dan menampilkan QR baru untuk di-scan
+        <strong>Hubungkan Ulang</strong> — coba sambung dengan sesi yang ada.<br />
+        <strong>Hapus Sesi</strong> — paksa QR baru, perlu scan ulang di HP.
       </p>
     </div>
   )

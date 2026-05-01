@@ -78,8 +78,8 @@ export async function handleChatMessage(phone, text, waService) {
     )
 
     if (patientRes.rows.length === 0) {
-      console.log(`[CHAT] Patient not found: ${cleanPhone}`)
-      return 'Maaf, nomor Anda belum terdaftar di sistem kami. Silakan hubungi petugas Posyandu untuk mendaftar. 🙏'
+      console.log(`[CHAT] Patient not found: ${cleanPhone} — ignoring`)
+      return null
     }
 
     const patient = patientRes.rows[0]
