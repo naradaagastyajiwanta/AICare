@@ -239,15 +239,25 @@ class WhatsAppService extends EventEmitter {
           let phone = remoteJid?.replace('@s.whatsapp.net', '').replace('@c.us', '')
 
           // Newer WhatsApp versions use @lid (Linked Identity) instead of phone-based JIDs.
-          // Resolve to actual phone number via the contacts map populated above.
+          // msg.key.remoteJidAlt carries the PN JID when the message is LID-addressed.
+          // Fall back to contacts map built from contacts.upsert events.
           if (remoteJid?.endsWith('@lid')) {
-            const resolved = this._lidToPhone.get(remoteJid)
-            if (resolved) {
-              phone = resolved
-              remoteJid = `${resolved}@s.whatsapp.net`
+            const altJid = msg.key.remoteJidAlt
+            if (altJid && (altJid.endsWith('@s.whatsapp.net') || altJid.endsWith('@c.us'))) {
+              // Populate map so future messages resolve instantly without needing remoteJidAlt
+              const altPhone = altJid.replace('@s.whatsapp.net', '').replace('@c.us', '')
+              this._lidToPhone.set(remoteJid, altPhone)
+              phone = altPhone
+              remoteJid = `${altPhone}@s.whatsapp.net`
             } else {
-              console.log(`[WA] Unresolved @lid ${remoteJid} — waiting for contact sync`)
-              continue
+              const resolved = this._lidToPhone.get(remoteJid)
+              if (resolved) {
+                phone = resolved
+                remoteJid = `${resolved}@s.whatsapp.net`
+              } else {
+                console.log(`[WA] Unresolved @lid ${remoteJid} — no alt JID or contact mapping`)
+                continue
+              }
             }
           }
 
