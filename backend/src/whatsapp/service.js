@@ -21,6 +21,7 @@ class WhatsAppService extends EventEmitter {
     this._connecting = false       // guard against concurrent connect() calls
     this._heartbeatTimer = null
     this._reconnectTimer = null    // track pending reconnect so we can cancel it
+    this._lidToPhone = new Map()   // LID JID → phone digits (e.g. 'xxx@lid' → '628xxx')
   }
 
   get state() {
@@ -217,27 +218,51 @@ class WhatsAppService extends EventEmitter {
         }
       })
 
+      // Build LID → phone map from contact sync so @lid messages can be resolved
+      this.sock.ev.on('contacts.upsert', (contacts) => {
+        for (const c of contacts) {
+          if (c.lid && c.id) {
+            const phone = c.id.replace('@s.whatsapp.net', '').replace('@c.us', '')
+            this._lidToPhone.set(c.lid, phone)
+          }
+        }
+      })
+
       this.sock.ev.on('messages.upsert', async ({ messages, type }) => {
-        console.log(`[WA] messages.upsert type=${type} count=${messages.length}`)
         if (type !== 'notify') return
         for (const msg of messages) {
           if (msg.key.fromMe) continue
           // Ignore group chats — only handle individual (private) messages
           if (msg.key.remoteJid?.endsWith('@g.us')) continue
-          const phone = msg.key.remoteJid?.replace('@s.whatsapp.net', '').replace('@c.us', '')
+
+          let remoteJid = msg.key.remoteJid
+          let phone = remoteJid?.replace('@s.whatsapp.net', '').replace('@c.us', '')
+
+          // Newer WhatsApp versions use @lid (Linked Identity) instead of phone-based JIDs.
+          // Resolve to actual phone number via the contacts map populated above.
+          if (remoteJid?.endsWith('@lid')) {
+            const resolved = this._lidToPhone.get(remoteJid)
+            if (resolved) {
+              phone = resolved
+              remoteJid = `${resolved}@s.whatsapp.net`
+            } else {
+              console.log(`[WA] Unresolved @lid ${remoteJid} — waiting for contact sync`)
+              continue
+            }
+          }
+
           if (!phone) continue
           const text = msg.message?.conversation
             ?? msg.message?.extendedTextMessage?.text
             ?? null
-          console.log(`[WA] Incoming from ${phone} type=${type} hasText=${!!text}`)
           if (!text) continue
 
           // Mark message as read (blue double tick)
           try { await this.sock.readMessages([msg.key]) } catch {}
           // Show typing indicator while processing
-          try { await this.sock.sendPresenceUpdate('composing', msg.key.remoteJid) } catch {}
+          this.sock.sendPresenceUpdate('composing', remoteJid).catch(() => {})
 
-          this.emit('message', { phone, text, jid: msg.key.remoteJid })
+          this.emit('message', { phone, text, jid: remoteJid })
         }
       })
 
