@@ -15,13 +15,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 const EMPTY = {
   name: '', phone: '', guardian_name: '', guardian_phone: '',
   medicine_name: '', notes: '', is_active: true,
+  timezone: 'Asia/Jakarta',
   reminder_times: [{ time: '08:00', label: '', category: 'medication' }],
 }
+
+const TIMEZONES = [
+  { value: 'Asia/Jakarta',  short: 'WIB', label: 'WIB – Waktu Indonesia Barat (UTC+7)', desc: 'Jawa, Sumatra, Kalimantan Barat & Tengah' },
+  { value: 'Asia/Makassar', short: 'WITA', label: 'WITA – Waktu Indonesia Tengah (UTC+8)', desc: 'Bali, Kalimantan Timur & Selatan, Sulawesi, NTB, NTT' },
+  { value: 'Asia/Jayapura', short: 'WIT',  label: 'WIT – Waktu Indonesia Timur (UTC+9)', desc: 'Maluku, Papua' },
+]
+
+const TZ_SHORT = Object.fromEntries(TIMEZONES.map(t => [t.value, t.short]))
 
 function normalizePatient(p) {
   if (!p) return EMPTY
   return {
     ...p,
+    timezone: p.timezone || 'Asia/Jakarta',
     reminder_times: p.reminder_times?.length > 0
       ? p.reminder_times.map(rt => ({ time: rt.time?.slice(0, 5) ?? '08:00', label: rt.label || '', category: rt.category || 'medication' }))
       : [{ time: (p.reminder_time ?? '08:00').slice(0, 5), label: '', category: 'medication' }],
@@ -156,6 +166,24 @@ function Modal({ patient, onClose, onSave }) {
                 className="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1">
                 <Plus className="w-3 h-3" /> Tambah
               </button>
+            </div>
+
+            {/* Timezone selector */}
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-surface-600 mb-1.5">Zona Waktu Pasien</label>
+              <select
+                value={form.timezone}
+                onChange={set('timezone')}
+                className="input text-sm"
+              >
+                {TIMEZONES.map(tz => (
+                  <option key={tz.value} value={tz.value}>{tz.label}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-surface-400 mt-1">
+                {TIMEZONES.find(t => t.value === form.timezone)?.desc}
+                {' — '}Jam pengingat di atas akan dikirim sesuai zona waktu ini.
+              </p>
             </div>
             <div className="space-y-2">
               {form.reminder_times.map((rt, idx) => (
@@ -364,7 +392,7 @@ export default function PatientsPage() {
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {(p.reminder_times || []).map((rt, i) => (
                       <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold ring-1 ${CATEGORY_COLORS[rt.category] || CATEGORY_COLORS.medication}`}>
-                        {rt.time}{rt.label ? ` · ${rt.label}` : ''}
+                        {rt.time} {TZ_SHORT[p.timezone] || 'WIB'}{rt.label ? ` · ${rt.label}` : ''}
                       </span>
                     ))}
                   </div>
@@ -431,7 +459,7 @@ export default function PatientsPage() {
                           <div className="flex flex-wrap gap-1">
                             {(p.reminder_times || []).map((rt, i) => (
                               <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold ring-1 ${CATEGORY_COLORS[rt.category] || CATEGORY_COLORS.medication}`}>
-                                {rt.time}
+                                {rt.time} <span className="opacity-60">{TZ_SHORT[p.timezone] || 'WIB'}</span>
                               </span>
                             ))}
                           </div>

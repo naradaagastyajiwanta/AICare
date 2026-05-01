@@ -24,9 +24,16 @@ function formatGuardianMessage(patient) {
   return `Halo, ini notifikasi dari Posyandu.\n\n*${patient.name}* belum mengonfirmasi minum obat *${patient.medicine_name}* hari ini. Mohon ditindaklanjuti.\n\nTerima kasih!`
 }
 
-function getJakartaTime() {
+// Returns the current time in the given IANA timezone as a plain Date object
+// whose .getHours()/.getMinutes() reflect that local time.
+function getLocalTime(timezone) {
   const now = new Date()
-  return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
+  return new Date(now.toLocaleString('en-US', { timeZone: timezone }))
+}
+
+// Returns today's date string (YYYY-MM-DD) in the given timezone.
+function getLocalDateStr(timezone) {
+  return getLocalTime(timezone).toLocaleDateString('en-CA') // en-CA produces YYYY-MM-DD
 }
 
 function timeToMinutes(timeStr) {
@@ -35,16 +42,15 @@ function timeToMinutes(timeStr) {
 }
 
 export function startCronJobs(waService) {
-  // ── Dynamic Reminder: every minute, checks per-reminder slot ──
+  // ── Dynamic Reminder: every minute ────────────────────────────────────────────
+  // Each patient's reminder_time is interpreted in THEIR timezone (p.timezone).
+  // The NOT EXISTS check uses p.timezone so scheduled_date comparisons are correct
+  // even for WITA/WIT patients near midnight.
   const reminderJob = new CronJob(
     '* * * * *',
     async () => {
       try {
-        const jakartaNow = getJakartaTime()
-        const currentMinutes = jakartaNow.getHours() * 60 + jakartaNow.getMinutes()
-
-        // Get active reminder slots that are due and not yet sent today (per category).
-        // Use Jakarta date explicitly so reminders near midnight are attributed correctly.
+        // Fetch all active reminder slots not yet sent today, per each patient's timezone
         const result = await db.query(`
           SELECT
             p.id AS patient_id,
@@ -52,6 +58,7 @@ export function startCronJobs(waService) {
             p.phone,
             p.medicine_name,
             p.guardian_phone,
+            p.timezone,
             pr.id AS reminder_slot_id,
             pr.reminder_time,
             pr.label,
@@ -61,8 +68,8 @@ export function startCronJobs(waService) {
           WHERE p.is_active = true
             AND NOT EXISTS (
               SELECT 1 FROM reminders r
-              WHERE r.patient_id = p.id
-                AND r.scheduled_date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+              WHERE r.patient_id    = p.id
+                AND r.scheduled_date = (NOW() AT TIME ZONE p.timezone)::date
                 AND r.reminder_slot_id = pr.id
                 AND r.status = 'sent'
             )
@@ -72,32 +79,40 @@ export function startCronJobs(waService) {
         if (result.rows.length === 0) return
 
         for (const slot of result.rows) {
-          const slotMinutes = timeToMinutes(slot.reminder_time)
+          const tz = slot.timezone || 'Asia/Jakarta'
+          const localNow      = getLocalTime(tz)
+          const currentMinutes = localNow.getHours() * 60 + localNow.getMinutes()
+          const slotMinutes    = timeToMinutes(slot.reminder_time)
+
+          // Skip if the slot time hasn't arrived yet in the patient's local timezone
           if (slotMinutes > currentMinutes) continue
           // Only fire within a 5-minute window — prevents retroactive bulk-sending
-          // while still catching up if the backend restarts briefly
+          // if the backend restarts briefly
           if (currentMinutes - slotMinutes > 5) continue
+
+          // Patient's local date string (YYYY-MM-DD) for scheduled_date storage
+          const localDateStr = getLocalDateStr(tz)
 
           try {
             const jid = phoneToJid(slot.phone)
             const message = formatReminderMessage(slot, slot.label, slot.category)
             await waService.sendMessage(jid, message)
-            console.log(`[CRON] ✅ ${slot.category} reminder sent to ${slot.name} at ${slot.reminder_time}${slot.label ? ' (' + slot.label + ')' : ''}`)
+            console.log(`[CRON] Reminder sent → ${slot.name} (${tz}) at ${slot.reminder_time} [${slot.category}]`)
 
             await db.query(`
               INSERT INTO reminders (patient_id, reminder_slot_id, scheduled_date, sent_at, status, category)
-              VALUES ($1, $2, (NOW() AT TIME ZONE 'Asia/Jakarta')::date, NOW(), 'sent', $3)
+              VALUES ($1, $2, $3::date, NOW(), 'sent', $4)
               ON CONFLICT (patient_id, scheduled_date, reminder_slot_id)
               DO UPDATE SET sent_at = NOW(), status = 'sent'
-            `, [slot.patient_id, slot.reminder_slot_id, slot.category])
+            `, [slot.patient_id, slot.reminder_slot_id, localDateStr, slot.category])
           } catch (err) {
-            console.error(`[CRON] ❌ Failed to remind ${slot.name}:`, err.message)
+            console.error(`[CRON] Failed to remind ${slot.name}:`, err.message)
             await db.query(`
               INSERT INTO reminders (patient_id, reminder_slot_id, scheduled_date, status, category)
-              VALUES ($1, $2, (NOW() AT TIME ZONE 'Asia/Jakarta')::date, 'failed', $3)
+              VALUES ($1, $2, $3::date, 'failed', $4)
               ON CONFLICT (patient_id, scheduled_date, reminder_slot_id)
               DO UPDATE SET status = 'failed'
-            `, [slot.patient_id, slot.reminder_slot_id, slot.category])
+            `, [slot.patient_id, slot.reminder_slot_id, localDateStr, slot.category])
           }
         }
       } catch (err) {
@@ -109,24 +124,22 @@ export function startCronJobs(waService) {
     'Asia/Jakarta'
   )
 
-  // ── Guardian Notification: every 30 min, 10:00-20:00 Jakarta ──
-  // Only for medication category non-responders
+  // ── Guardian Notification: every 30 min, 08:00–21:00 Jakarta ─────────────────
+  // Operational window stays in Jakarta time (system-level decision).
+  // "Today" checks use p.timezone per patient for correctness.
   const guardianJob = new CronJob(
     '*/30 * * * *',
     async () => {
       try {
-        const jakartaNow = getJakartaTime()
-        const hour = jakartaNow.getHours()
-        if (hour < 10 || hour >= 20) return
+        const jakartaHour = getLocalTime('Asia/Jakarta').getHours()
+        if (jakartaHour < 8 || jakartaHour >= 21) return
 
-        // DISTINCT ON (p.id) ensures at most one row per patient — a patient may have
-        // multiple medication slots, but the guardian should only receive one notification.
         const result = await db.query(`
           SELECT DISTINCT ON (p.id)
-            p.id, p.name, p.phone, p.medicine_name, p.guardian_phone
+            p.id, p.name, p.phone, p.medicine_name, p.guardian_phone, p.timezone
           FROM patients p
           JOIN reminders r ON r.patient_id = p.id
-            AND r.scheduled_date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+            AND r.scheduled_date = (NOW() AT TIME ZONE p.timezone)::date
             AND r.status = 'sent'
             AND r.category = 'medication'
           WHERE p.is_active = true
@@ -135,14 +148,14 @@ export function startCronJobs(waService) {
             AND NOT EXISTS (
               SELECT 1 FROM reminders r2
               WHERE r2.patient_id = p.id
-                AND r2.scheduled_date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                AND r2.scheduled_date = (NOW() AT TIME ZONE p.timezone)::date
                 AND r2.category = 'medication'
                 AND r2.guardian_notified_at IS NOT NULL
             )
             AND NOT EXISTS (
               SELECT 1 FROM responses resp
               WHERE resp.patient_id = p.id
-                AND (resp.responded_at AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                AND (resp.responded_at AT TIME ZONE p.timezone)::date = (NOW() AT TIME ZONE p.timezone)::date
                 AND resp.response_type = 'medication'
             )
           ORDER BY p.id
@@ -155,19 +168,17 @@ export function startCronJobs(waService) {
             const jid = phoneToJid(patient.guardian_phone)
             const message = formatGuardianMessage(patient)
             await waService.sendMessage(jid, message)
-            console.log(`[CRON] ✅ Guardian notified for ${patient.name} → ${patient.guardian_phone}`)
+            console.log(`[CRON] Guardian notified for ${patient.name} → ${patient.guardian_phone}`)
 
-            // Mark ALL medication reminders for this patient-date as notified
-            // so no other slot can trigger a duplicate notification
             await db.query(`
               UPDATE reminders
               SET guardian_notified_at = NOW()
               WHERE patient_id = $1
-                AND scheduled_date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                AND scheduled_date = (NOW() AT TIME ZONE $2)::date
                 AND category = 'medication'
-            `, [patient.id])
+            `, [patient.id, patient.timezone || 'Asia/Jakarta'])
           } catch (err) {
-            console.error(`[CRON] ❌ Failed to notify guardian for ${patient.name}:`, err.message)
+            console.error(`[CRON] Failed to notify guardian for ${patient.name}:`, err.message)
           }
         }
       } catch (err) {
@@ -179,19 +190,19 @@ export function startCronJobs(waService) {
     'Asia/Jakarta'
   )
 
-  // ── Motivation Message: every 5 minutes, send to patients who completed all targets ──
+  // ── Motivation Message: every 5 minutes ───────────────────────────────────────
   const motivationJob = new CronJob(
     '*/5 * * * *',
     async () => {
       try {
         const result = await db.query(`
-          SELECT p.id, p.name, p.phone, p.medicine_name, s.id AS score_id
+          SELECT p.id, p.name, p.phone, p.medicine_name, p.timezone, s.id AS score_id
           FROM patient_daily_scores s
           JOIN patients p ON p.id = s.patient_id
-          WHERE s.score_date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
-            AND s.all_positive = true
+          WHERE s.score_date    = (NOW() AT TIME ZONE p.timezone)::date
+            AND s.all_positive  = true
             AND s.motivation_sent = false
-            AND p.is_active = true
+            AND p.is_active     = true
         `)
 
         for (const patient of result.rows) {
@@ -209,9 +220,9 @@ export function startCronJobs(waService) {
             const jid = phoneToJid(patient.phone)
             const message = `Luar biasa ${patient.name}! 🎉🌟\n\nKamu sudah menyelesaikan semua target kesehatan hari ini:\n✅ Minum obat\n✅ Aktivitas fisik\n✅ Makan bergizi\n\nKonsistensi seperti ini yang membuat kamu semakin sehat. Pertahankan terus ya! 💪`
             await waService.sendMessage(jid, message)
-            console.log(`[CRON] ✅ Motivation message sent to ${patient.name}`)
+            console.log(`[CRON] Motivation message sent to ${patient.name}`)
           } catch (err) {
-            console.error(`[CRON] ❌ Failed to send motivation to ${patient.name}:`, err.message)
+            console.error(`[CRON] Failed to send motivation to ${patient.name}:`, err.message)
             // Roll back the claim so it retries next tick
             await db.query('UPDATE patient_daily_scores SET motivation_sent = false WHERE id = $1', [patient.score_id])
           }
@@ -225,7 +236,7 @@ export function startCronJobs(waService) {
     'Asia/Jakarta'
   )
 
-  console.log('[CRON] Dynamic reminder scheduled (every minute, multi-category, Asia/Jakarta)')
-  console.log('[CRON] Guardian notification scheduled (every 30 min, 10:00-20:00, medication-only, Asia/Jakarta)')
-  console.log('[CRON] Motivation message scheduled (every 5 min, when all_positive=true)')
+  console.log('[CRON] Reminder scheduled (every minute, per-patient timezone)')
+  console.log('[CRON] Guardian notification scheduled (every 30 min, 08:00-21:00, medication-only)')
+  console.log('[CRON] Motivation message scheduled (every 5 min)')
 }

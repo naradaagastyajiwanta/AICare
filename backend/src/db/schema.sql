@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS patients (
   medicine_name   VARCHAR(255) NOT NULL,
   -- reminder_time column kept for backward compatibility, but new code uses patient_reminders table
   reminder_time   TIME         NOT NULL DEFAULT '08:00:00',
+  timezone        VARCHAR(50)  NOT NULL DEFAULT 'Asia/Jakarta',
   is_active       BOOLEAN      NOT NULL DEFAULT true,
   notes           TEXT,
   created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -134,3 +135,6 @@ DROP TRIGGER IF EXISTS patients_updated_at ON patients;
 CREATE TRIGGER patients_updated_at
   BEFORE UPDATE ON patients
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Migration: add timezone column for existing databases
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS timezone VARCHAR(50) NOT NULL DEFAULT 'Asia/Jakarta';

@@ -113,22 +113,23 @@ router.get('/patients/:id', async (req, res) => {
 })
 
 router.post('/patients', async (req, res) => {
-  const { name, phone, guardian_name, guardian_phone, medicine_name, reminder_times, notes } = req.body
+  const { name, phone, guardian_name, guardian_phone, medicine_name, reminder_times, notes, timezone } = req.body
   if (!name || !phone || !medicine_name) {
     return res.status(400).json({ error: 'name, phone, and medicine_name are required' })
   }
 
   // Default reminder time for backward compatibility
   const defaultTime = reminder_times?.[0]?.time ?? '08:00'
+  const tz = timezone || 'Asia/Jakarta'
 
   try {
     await db.query('BEGIN')
 
     const patient = await db.query(`
-      INSERT INTO patients (name, phone, guardian_name, guardian_phone, medicine_name, reminder_time, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO patients (name, phone, guardian_name, guardian_phone, medicine_name, reminder_time, timezone, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
-    `, [name, phone, guardian_name ?? null, guardian_phone ?? null, medicine_name, defaultTime, notes ?? null])
+    `, [name, phone, guardian_name ?? null, guardian_phone ?? null, medicine_name, defaultTime, tz, notes ?? null])
 
     const patientId = patient.rows[0].id
 
@@ -152,18 +153,19 @@ router.post('/patients', async (req, res) => {
 })
 
 router.put('/patients/:id', async (req, res) => {
-  const { name, phone, guardian_name, guardian_phone, medicine_name, reminder_times, notes, is_active } = req.body
+  const { name, phone, guardian_name, guardian_phone, medicine_name, reminder_times, notes, is_active, timezone } = req.body
+  const tz = timezone || 'Asia/Jakarta'
   try {
     await db.query('BEGIN')
 
     const patient = await db.query(`
       UPDATE patients
       SET name=$1, phone=$2, guardian_name=$3, guardian_phone=$4,
-          medicine_name=$5, reminder_time=$6, notes=$7, is_active=$8
-      WHERE id=$9
+          medicine_name=$5, reminder_time=$6, timezone=$7, notes=$8, is_active=$9
+      WHERE id=$10
       RETURNING *
     `, [name, phone, guardian_name ?? null, guardian_phone ?? null,
-        medicine_name, reminder_times?.[0]?.time ?? '08:00', notes ?? null, is_active ?? true, req.params.id])
+        medicine_name, reminder_times?.[0]?.time ?? '08:00', tz, notes ?? null, is_active ?? true, req.params.id])
 
     if (patient.rows.length === 0) {
       await db.query('ROLLBACK')
