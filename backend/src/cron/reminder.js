@@ -68,10 +68,10 @@ export function startCronJobs(waService) {
           WHERE p.is_active = true
             AND NOT EXISTS (
               SELECT 1 FROM reminders r
-              WHERE r.patient_id    = p.id
-                AND r.scheduled_date = (NOW() AT TIME ZONE p.timezone)::date
+              WHERE r.patient_id     = p.id
+                AND r.scheduled_date  = (NOW() AT TIME ZONE p.timezone)::date
                 AND r.reminder_slot_id = pr.id
-                AND r.status = 'sent'
+                AND r.status IN ('sent', 'sending')
             )
           ORDER BY pr.reminder_time, p.id
         `)
@@ -93,6 +93,20 @@ export function startCronJobs(waService) {
           // Patient's local date string (YYYY-MM-DD) for scheduled_date storage
           const localDateStr = getLocalDateStr(tz)
 
+          // Atomic claim: INSERT 'sending'. On conflict, only update if the
+          // existing row is 'failed' (allows retry). If 'sending'/'sent',
+          // DO UPDATE WHERE is false → effectively DO NOTHING → 0 rows returned.
+          const claim = await db.query(`
+            INSERT INTO reminders (patient_id, reminder_slot_id, scheduled_date, status, category)
+            VALUES ($1, $2, $3::date, 'sending', $4)
+            ON CONFLICT (patient_id, scheduled_date, reminder_slot_id)
+            DO UPDATE SET status = 'sending'
+              WHERE reminders.status = 'failed'
+            RETURNING id
+          `, [slot.patient_id, slot.reminder_slot_id, localDateStr, slot.category])
+
+          if (claim.rowCount === 0) continue  // already claimed or confirmed by another tick
+
           try {
             const jid = phoneToJid(slot.phone)
             const message = formatReminderMessage(slot, slot.label, slot.category)
@@ -100,19 +114,15 @@ export function startCronJobs(waService) {
             console.log(`[CRON] Reminder sent → ${slot.name} (${tz}) at ${slot.reminder_time} [${slot.category}]`)
 
             await db.query(`
-              INSERT INTO reminders (patient_id, reminder_slot_id, scheduled_date, sent_at, status, category)
-              VALUES ($1, $2, $3::date, NOW(), 'sent', $4)
-              ON CONFLICT (patient_id, scheduled_date, reminder_slot_id)
-              DO UPDATE SET sent_at = NOW(), status = 'sent'
-            `, [slot.patient_id, slot.reminder_slot_id, localDateStr, slot.category])
+              UPDATE reminders SET sent_at = NOW(), status = 'sent'
+              WHERE patient_id = $1 AND scheduled_date = $2::date AND reminder_slot_id = $3
+            `, [slot.patient_id, localDateStr, slot.reminder_slot_id])
           } catch (err) {
             console.error(`[CRON] Failed to remind ${slot.name}:`, err.message)
             await db.query(`
-              INSERT INTO reminders (patient_id, reminder_slot_id, scheduled_date, status, category)
-              VALUES ($1, $2, $3::date, 'failed', $4)
-              ON CONFLICT (patient_id, scheduled_date, reminder_slot_id)
-              DO UPDATE SET status = 'failed'
-            `, [slot.patient_id, slot.reminder_slot_id, localDateStr, slot.category])
+              UPDATE reminders SET status = 'failed'
+              WHERE patient_id = $1 AND scheduled_date = $2::date AND reminder_slot_id = $3
+            `, [slot.patient_id, localDateStr, slot.reminder_slot_id])
           }
         }
       } catch (err) {

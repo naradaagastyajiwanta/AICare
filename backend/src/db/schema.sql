@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS reminders (
   sent_at              TIMESTAMPTZ,
   guardian_notified_at TIMESTAMPTZ,
   status               VARCHAR(20) NOT NULL DEFAULT 'pending'
-                         CHECK (status IN ('pending', 'sent', 'failed')),
+                         CHECK (status IN ('pending', 'sending', 'sent', 'failed')),
   category             VARCHAR(30) NOT NULL DEFAULT 'medication'
                          CHECK (category IN ('medication', 'activity', 'diet')),
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()

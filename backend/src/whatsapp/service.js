@@ -260,8 +260,8 @@ class WhatsAppService extends EventEmitter {
     if (!this.sock || this.status !== 'connected') {
       throw new Error('WhatsApp not connected')
     }
-    // Stop typing indicator before sending
-    try { await this.sock.sendPresenceUpdate('paused', jid) } catch {}
+    // Stop typing indicator — fire-and-forget to avoid blocking the send
+    this.sock.sendPresenceUpdate('paused', jid).catch(() => {})
 
     if (typeof content === 'string') {
       await this.sock.sendMessage(jid, { text: content })
