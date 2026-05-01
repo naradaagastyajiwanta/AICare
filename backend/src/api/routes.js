@@ -9,6 +9,19 @@ import fs from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const UPLOADS_DIR = path.resolve(__dirname, '../../../uploads')
+
+// Normalize phone to E.164-style digits (no +). Leading 0 → 62 (Indonesia).
+// International callers should enter number with country code, no leading 0.
+function normalizePhone(phone) {
+  if (!phone) return phone
+  let n = String(phone).replace(/\D/g, '')
+  if (n.startsWith('0')) n = '62' + n.slice(1)
+  return n
+}
+
+function phoneToJid(phone) {
+  return `${normalizePhone(phone)}@s.whatsapp.net`
+}
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true })
 
 const storage = multer.diskStorage({
@@ -118,6 +131,8 @@ router.post('/patients', async (req, res) => {
     return res.status(400).json({ error: 'name, phone, and medicine_name are required' })
   }
 
+  const normPhone = normalizePhone(phone)
+  const normGuardian = normalizePhone(guardian_phone) ?? null
   // Default reminder time for backward compatibility
   const defaultTime = reminder_times?.[0]?.time ?? '08:00'
   const tz = timezone || 'Asia/Jakarta'
@@ -129,7 +144,7 @@ router.post('/patients', async (req, res) => {
       INSERT INTO patients (name, phone, guardian_name, guardian_phone, medicine_name, reminder_time, timezone, notes)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
-    `, [name, phone, guardian_name ?? null, guardian_phone ?? null, medicine_name, defaultTime, tz, notes ?? null])
+    `, [name, normPhone, guardian_name ?? null, normGuardian, medicine_name, defaultTime, tz, notes ?? null])
 
     const patientId = patient.rows[0].id
 
@@ -155,6 +170,8 @@ router.post('/patients', async (req, res) => {
 router.put('/patients/:id', async (req, res) => {
   const { name, phone, guardian_name, guardian_phone, medicine_name, reminder_times, notes, is_active, timezone } = req.body
   const tz = timezone || 'Asia/Jakarta'
+  const normPhone = normalizePhone(phone)
+  const normGuardian = normalizePhone(guardian_phone) ?? null
   try {
     await db.query('BEGIN')
 
@@ -164,7 +181,7 @@ router.put('/patients/:id', async (req, res) => {
           medicine_name=$5, reminder_time=$6, timezone=$7, notes=$8, is_active=$9
       WHERE id=$10
       RETURNING *
-    `, [name, phone, guardian_name ?? null, guardian_phone ?? null,
+    `, [name, normPhone, guardian_name ?? null, normGuardian,
         medicine_name, reminder_times?.[0]?.time ?? '08:00', tz, notes ?? null, is_active ?? true, req.params.id])
 
     if (patient.rows.length === 0) {
@@ -640,7 +657,7 @@ router.post('/broadcasts', async (req, res) => {
     let sent = 0, failed = 0
     for (const patient of patients.rows) {
       try {
-        const jid = patient.phone.replace(/\D/g, '') + '@s.whatsapp.net'
+        const jid = phoneToJid(patient.phone)
         if (imageBuffer) {
           await waService.sendMessage(jid, { image: imageBuffer, caption: message })
         } else {

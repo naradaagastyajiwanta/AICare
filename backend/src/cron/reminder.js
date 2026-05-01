@@ -1,9 +1,16 @@
 import { CronJob } from 'cron'
 import { db } from '../db/index.js'
 
+// Normalize to E.164-style digits: strip non-digits, leading 0 → 62 (Indonesia).
+// International patients should enter their number with country code (no leading 0).
+function normalizePhone(phone) {
+  let n = phone.replace(/\D/g, '')
+  if (n.startsWith('0')) n = '62' + n.slice(1)
+  return n
+}
+
 function phoneToJid(phone) {
-  const clean = phone.replace(/\D/g, '')
-  return `${clean}@s.whatsapp.net`
+  return `${normalizePhone(phone)}@s.whatsapp.net`
 }
 
 function formatReminderMessage(patient, label, category) {

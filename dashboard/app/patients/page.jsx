@@ -142,7 +142,7 @@ function Modal({ patient, onClose, onSave }) {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Nama Lengkap *" value={form.name} onChange={set('name')} required />
-              <Field label="No. WhatsApp *" value={form.phone} onChange={set('phone')} placeholder="628xxx" required />
+              <Field label="No. WhatsApp *" value={form.phone} onChange={set('phone')} placeholder="628xxx atau 08xxx" required hint="Angka saja, tanpa +. Nomor luar negeri: awali dengan kode negara (mis. 44xxx)." />
               <Field label="Nama Obat *" value={form.medicine_name} onChange={set('medicine_name')} required />
               <Field label="Catatan" value={form.notes} onChange={set('notes')} />
             </div>
@@ -152,7 +152,7 @@ function Modal({ patient, onClose, onSave }) {
             <h3 className="text-xs font-bold text-surface-500 uppercase tracking-wider mb-3">Data Wali</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Nama Wali" value={form.guardian_name} onChange={set('guardian_name')} />
-              <Field label="No. WA Wali" value={form.guardian_phone} onChange={set('guardian_phone')} placeholder="628xxx" />
+              <Field label="No. WA Wali" value={form.guardian_phone} onChange={set('guardian_phone')} placeholder="628xxx atau 08xxx" />
             </div>
           </div>
 
@@ -237,11 +237,12 @@ function Modal({ patient, onClose, onSave }) {
   )
 }
 
-function Field({ label, ...props }) {
+function Field({ label, hint, ...props }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-surface-600 mb-1.5">{label}</label>
       <input {...props} className="input" />
+      {hint && <p className="text-[11px] text-surface-400 mt-1">{hint}</p>}
     </div>
   )
 }
